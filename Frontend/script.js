@@ -1080,7 +1080,10 @@ function renderFilteredElections(electionList) {
 
     let displayed = electionList;
     if (isVoter) {
-        displayed = electionList.filter(e => {
+        // 1. STRICT ACTIVE FILTER: Inactive / paused polls are NEVER visible to voters
+        const activeOnlyList = electionList.filter(e => !(e.isActive === false || e.isActive === 0 || e.isActive === 'false'));
+
+        displayed = activeOnlyList.filter(e => {
             // Ballots marked 'visibleToAll' or 'All States' are always visible to every voter nationwide
             if (e.visibleToAll || e.state === 'All States' || e.state === 'All India' || e.assembly === 'All Assemblies' || !e.state) {
                 return true;
@@ -1096,8 +1099,8 @@ function renderFilteredElections(electionList) {
             return stateMatches || assMatches;
         });
 
-        if (displayed.length === 0 && electionList.length > 0) {
-            displayed = electionList;
+        if (displayed.length === 0 && activeOnlyList.length > 0) {
+            displayed = activeOnlyList;
         }
     }
 
