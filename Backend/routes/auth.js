@@ -14,7 +14,7 @@ router.get('/token', (req, res) => {
     const user = {
         id: role === 'admin' ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
         name: role === 'admin' ? 'Chief Election Admin' : 'Souvik (Voter)',
-        email: role === 'admin' ? 'rajarshighs1@gmail.com' : 'voter@bharatvote.in',
+        email: role === 'admin' ? 'souvik@admin.com' : 'voter@digivoter.gov.in',
         role: role
     };
     const token = jwt.sign(user, secret, { expiresIn: '30d' });

@@ -26,12 +26,13 @@ async function seedDatabase(forceReset = false) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash('DemoPass@123', salt);
 
-        let adminUser = await User.findOne({ email: 'rajarshighs1@gmail.com' });
+        let adminUser = await User.findOne({ email: 'souvik@admin.com' });
         if (!adminUser) {
+            const adminPassHash = await bcrypt.hash('admin123', salt);
             adminUser = await User.create({
                 name: 'Chief Election Admin',
-                email: 'rajarshighs1@gmail.com',
-                password: hashedPassword,
+                email: 'souvik@admin.com',
+                password: adminPassHash,
                 role: 'admin'
             });
         }

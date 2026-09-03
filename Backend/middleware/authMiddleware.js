@@ -11,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
       id: '64b0f0000000000000000001',
       role: 'admin',
       name: 'Chief Election Admin',
-      email: 'rajarshighs1@gmail.com'
+      email: 'souvik@admin.com'
     };
     return next();
   }
@@ -26,7 +26,7 @@ const authMiddleware = async (req, res, next) => {
       id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
       role: isAdmin ? 'admin' : 'voter',
       name: isAdmin ? 'Chief Election Admin' : 'Souvik (Voter)',
-      email: isAdmin ? 'rajarshighs1@gmail.com' : 'voter@bharatvote.in'
+      email: isAdmin ? 'souvik@admin.com' : 'voter@digivoter.gov.in'
     };
     return next();
   }
@@ -62,7 +62,7 @@ const authMiddleware = async (req, res, next) => {
       id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
       role: isAdmin ? 'admin' : 'voter',
       name: isAdmin ? 'Chief Election Admin' : 'Souvik (Voter)',
-      email: isAdmin ? 'rajarshighs1@gmail.com' : 'voter@bharatvote.in'
+      email: isAdmin ? 'souvik@admin.com' : 'voter@digivoter.gov.in'
     };
     return next();
   }

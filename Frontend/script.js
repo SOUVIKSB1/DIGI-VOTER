@@ -51,7 +51,7 @@ window.switchTestRole = function(role) {
         const adminUser = {
             id: '64b0f0000000000000000001',
             name: 'Chief Election Admin',
-            email: 'rajarshighs1@gmail.com',
+            email: 'souvik@admin.com',
             role: 'admin'
         };
         localStorage.setItem('localUser', JSON.stringify(adminUser));
@@ -446,8 +446,8 @@ const firebaseConfig = {
     measurementId: "G-8YMQ9MW0P9"
 };
 
-const OWNER_EMAIL = 'rajarshighs1@gmail.com';
-const ADMIN_EMAIL = 'rajarshighs7@gmail.com';
+const OWNER_EMAIL = 'souvik@admin.com';
+const ADMIN_EMAIL = 'souvik@admin.com';
 
 function updateNetworkStatus() {
     if (!NETWORK_STATUS) return;
@@ -1225,7 +1225,7 @@ window.authenticateAsAdmin = async function(email, password) {
     const adminUser = {
         id: '64b0f0000000000000000001',
         name: 'Chief Election Admin',
-        email: email || 'rajarshighs1@gmail.com',
+        email: email || 'souvik@admin.com',
         role: 'admin'
     };
     localStorage.setItem('localUser', JSON.stringify(adminUser));
