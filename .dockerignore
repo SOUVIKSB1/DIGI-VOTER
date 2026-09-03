@@ -1,0 +1,17 @@
+.git
+.github
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+venv/
+.DS_Store
+*.log
+Backend/package-lock.json
+Backend/package.json
+Backend/start-dev.ps1
+Backend/tests

@@ -174,33 +174,31 @@ Conversational grounded intelligence endpoint:
 
 ---
 
-## 🚀 Installation & Local Setup
+## 🚀 Installation, Hosting & Deployment
 
-### Prerequisites
-- Python 3.10, 3.11, or 3.12
-- Node.js (optional, for web guidance or static linting)
+For comprehensive deployment instructions across **Render**, **Railway**, **Docker & Docker Compose**, **AWS EC2 / DigitalOcean VPS**, and **Google Cloud Run**, see the detailed [**Hosting & Deployment Guide (DEPLOYMENT.md)**](DEPLOYMENT.md).
 
-### Step 1: Clone Repository
+### Quick Local Setup
 ```bash
+# 1. Clone Repository
 git clone git@github.com:SOUVIKSB1/DIGI-VOTER.git
 cd DIGI-VOTER
-```
 
-### Step 2: Install Dependencies
-```bash
-pip install -r backend/requirements.txt
-```
+# 2. Install Dependencies
+pip install -r Backend/requirements.txt
 
-### Step 3: Run Automated Tests
-```bash
-python -m pytest backend/tests/ -v
-```
+# 3. Run Automated Tests
+python -m pytest Backend/tests/ -v
 
-### Step 4: Launch Development Server
-```bash
-python backend/run.py
+# 4. Launch Production / Dev Server
+python Backend/run.py
 ```
 Open your browser at: **`http://127.0.0.1:5001`**
+
+### Instant Docker Launch
+```bash
+docker compose up -d --build
+```
 
 ---
 

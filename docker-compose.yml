@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  votevision-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: votevision-ai
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - PORT=5001
+      - CORS_ORIGINS=*
+      - SECRET_KEY=votevision-ai-production-super-secret-key-2026
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
