@@ -159,8 +159,35 @@
                 </div>
             </div>
 
-            <!-- VISIBLE CHIEF ELECTION OFFICER CREDENTIALS CARD -->
-            <div class="admin-credentials-glass-card">
+            <!-- ADMIN ACTIVE SESSION BAR (Shown when Admin is Logged In) -->
+            <div id="adminActiveSessionBar" class="admin-session-active-card" style="display:none; margin-bottom:1.5rem; background:#ffffff; border:1px solid #e2e8f0; border-left:4px solid #ea580c; border-radius:14px; padding:14px 18px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #ea580c 0%, #c2410c 100%); display:flex; align-items:center; justify-content:center; font-size:1.3rem; box-shadow:0 4px 12px rgba(234,88,12,0.3); color:#fff; flex-shrink:0;">
+                            🛡️
+                        </div>
+                        <div>
+                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <strong style="font-size:1.02rem; color:#0f172a;" id="adminSessionEmailDisplay">souvik@admin.com</strong>
+                                <span class="status-badge online" style="background:#dcfce7; color:#15803d; border-color:#86efac; font-weight:700; font-size:0.75rem;">
+                                    ● AUTHORIZED SESSION ACTIVE
+                                </span>
+                            </div>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">
+                                Clearance: <strong style="color:#ea580c;">Chief Electoral Officer (Super Admin)</strong> • Full electoral authority enabled
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn btn-outline btn-sm" onclick="showAdminCredentialsPrompt()" style="font-size:0.8rem; font-weight:600;">
+                            🔑 Switch Admin Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISIBLE CHIEF ELECTION OFFICER CREDENTIALS CARD (Shown only when unauthenticated or switching) -->
+            <div class="admin-credentials-glass-card" id="adminCredentialsCard">
                 <div class="cred-header">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.6rem;">🔐</span>

@@ -71,6 +71,7 @@ window.switchTestRole = function(role) {
             adminSection.classList.add('role-switch-anim');
         }
 
+        if (window.updateAdminAuthUI) window.updateAdminAuthUI();
         if (window.showAdminTab) window.showAdminTab('manageElections');
         if (window.loadElections) window.loadElections();
         if (window.loadAnalytics) window.loadAnalytics();
@@ -1347,6 +1348,35 @@ function updateVoterUI(voterUser) {
 }
 
 // --- ADMIN VISIBLE CREDENTIALS & LOGIN HELPERS ---
+window.updateAdminAuthUI = function() {
+    const credCard = document.getElementById('adminCredentialsCard');
+    const sessionBar = document.getElementById('adminActiveSessionBar');
+    const emailDisplay = document.getElementById('adminSessionEmailDisplay');
+
+    const localUser = JSON.parse(localStorage.getItem('localUser') || 'null');
+    const backendUser = JSON.parse(localStorage.getItem('backendUser') || 'null');
+    const role = localStorage.getItem('ovmsActiveRole');
+    const isAdmin = (role === 'admin') && ((localUser && localUser.role === 'admin') || (backendUser && backendUser.role === 'admin'));
+
+    if (isAdmin) {
+        if (credCard) credCard.style.display = 'none';
+        if (sessionBar) sessionBar.style.display = 'block';
+        if (emailDisplay) {
+            emailDisplay.textContent = (localUser && localUser.email) || (backendUser && backendUser.email) || 'souvik@admin.com';
+        }
+    } else {
+        if (credCard) credCard.style.display = 'block';
+        if (sessionBar) sessionBar.style.display = 'none';
+    }
+};
+
+window.showAdminCredentialsPrompt = function() {
+    const credCard = document.getElementById('adminCredentialsCard');
+    const sessionBar = document.getElementById('adminActiveSessionBar');
+    if (credCard) credCard.style.display = 'block';
+    if (sessionBar) sessionBar.style.display = 'none';
+};
+
 window.authenticateAsAdmin = async function(email, password) {
     const adminUser = {
         id: '64b0f0000000000000000001',
@@ -1371,6 +1401,7 @@ window.authenticateAsAdmin = async function(email, password) {
     }
 
     window.switchTestRole('admin');
+    if (window.updateAdminAuthUI) window.updateAdminAuthUI();
     if (typeof showToast === 'function') showToast('Administrator session verified & privileges active! 🛡️', 'success');
 };
 
