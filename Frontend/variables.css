@@ -1,0 +1,9 @@
+/* Centralized CSS variables for the OVMS site */
+:root {
+    --saffron: #FF671F;
+    --deepgreen: #046A38;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+    --font-family: "Poppins", sans-serif;
+}

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoteVision AI — Explainable Election Intelligence & Forecasting Platform</title>
+  <meta name="description" content="Production-quality election intelligence platform for India Lok Sabha elections with multi-model ML forecasting, grounded AI analyst, interactive India map, and explainable AI." />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <div class="brand-wrapper">
+      <div class="brand-icon">V</div>
+      <div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="brand-title">VoteVision AI</span>
+          <span class="brand-badge">2026 Projections</span>
+        </div>
+        <div style="font-size:0.68rem; color:var(--text-muted);">Explainable Election Intelligence & Forecasting</div>
+      </div>
+    </div>
+
+    <div class="top-metrics-strip">
+      <div class="metric-pill">
+        <span class="live-indicator"></span>
+        <span>Lok Sabha: <strong>543 Seats</strong></span>
+      </div>
+      <div class="metric-pill">
+        <span>Majority Mark: <strong>272</strong></span>
+      </div>
+      <div class="metric-pill">
+        <span>Model Ensemble: <strong>Active (88.7% Acc)</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Navigation Bar -->
+  <nav class="tabs-container" aria-label="Platform Views">
+    <button class="tab-btn active" data-tab="home_tab">🏠 Home</button>
+    <button class="tab-btn" data-tab="dashboard_tab">📊 Election Dashboard</button>
+    <button class="tab-btn" data-tab="map_tab">🗺️ India Interactive Map</button>
+    <button class="tab-btn" data-tab="state_analysis">🏛️ State Analysis</button>
+    <button class="tab-btn" data-tab="predictions_tab">📍 Constituency Predictions</button>
+    <button class="tab-btn" data-tab="candidates_tab">👤 Candidate Directory & Compare</button>
+    <button class="tab-btn" data-tab="parties_tab">🏛️ Party Analysis</button>
+    <button class="tab-btn" data-tab="simulator_tab">🔮 Swing Simulator</button>
+    <button class="tab-btn" data-tab="battlegrounds_tab">🎯 Battleground Races</button>
+    <button class="tab-btn" data-tab="model_tab">📈 Model Evaluation & XAI</button>
+    <button class="tab-btn" data-tab="analyst_tab">🤖 AI Election Analyst</button>
+    <button class="tab-btn" data-tab="methodology_tab">📚 Methodology & Disclaimer</button>
+  </nav>
+
+  <!-- Main Content Body -->
+  <main class="main-content">
+
+    <!-- 1. HOME VIEW -->
+    <section id="home_tab" class="tab-content active">
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;">
+            India Parliamentary Election Intelligence
+          </h1>
+          <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Calibrated multi-model forecasting across 543 Lok Sabha constituencies, grounded in Election Commission records.
+          </p>
+        </div>
+        <div style="display:flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="App.switchTab('map_tab')">Open Interactive Map</button>
+          <button class="btn" onclick="App.switchTab('analyst_tab')">Ask AI Analyst</button>
+        </div>
+      </div>
+
+      <!-- Top National KPIs -->
+      <div class="grid-cards-4">
+        <div class="kpi-card saffron">
+          <div class="kpi-label">Total Constituencies</div>
+          <div class="kpi-value" id="kpiTotalSeats">543</div>
+          <div class="kpi-delta positive"><span>●</span> 28 States & 8 Union Territories</div>
+        </div>
+        <div class="kpi-card cyan">
+          <div class="kpi-label">Projected Coalition Leader</div>
+          <div class="kpi-value" id="kpiLeadingAlliance">NDA (293)</div>
+          <div class="kpi-delta positive"><span>▲</span> Projected over 272 majority mark</div>
+        </div>
+        <div class="kpi-card emerald">
+          <div class="kpi-label">Largest Single Party</div>
+          <div class="kpi-value" id="kpiLeadingParty">BJP (244)</div>
+          <div class="kpi-delta"><span>Runners:</span> INC (105), SP (36), AITC (30)</div>
+        </div>
+        <div class="kpi-card rose">
+          <div class="kpi-label">Closest Contests (Margin &lt; 5%)</div>
+          <div class="kpi-value" id="kpiBattlegroundsCount">38</div>
+          <div class="kpi-delta danger"><span>⚠️</span> High volatility swing seats</div>
+        </div>
+      </div>
+
+      <!-- Majority Progress Tracker -->
+      <div class="majority-tracker-wrapper">
+        <div class="tracker-labels">
+          <span><strong>National Seat Trajectory</strong></span>
+          <span style="color: var(--accent-blue);">Majority Benchmark: <strong>272 Seats</strong></span>
+        </div>
+        <div class="majority-bar">
+          <div id="barSegmentNda" class="bar-segment segment-nda" style="width: 54%;">NDA 293</div>
+          <div id="barSegmentIndia" class="bar-segment segment-india" style="width: 43%;">INDIA 234</div>
+          <div id="barSegmentOth" class="bar-segment segment-others" style="width: 3%;">16</div>
+          <div class="majority-line">
+            <span class="majority-marker-label">272 Majority</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Contests & Shortcuts -->
+      <div class="grid-split-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔥 Tightest Battleground Races</div>
+            <button class="btn" style="font-size: 0.75rem;" onclick="App.switchTab('battlegrounds_tab')">View All</button>
+          </div>
+          <div id="homeBattlegroundTicker" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚡ Feature Spotlight</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+            <div style="padding: 0.75rem; background: #0f172a; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>🗺️ State & Seat Map</strong>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Explore geographic distribution and state vote swings</div>
+              </div>
+              <button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="App.switchTab('map_tab')">Explore</button>
+            </div>
+            <div style="padding: 0.75rem; background: #0f172a; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>🔮 Multi-Tier Swing Simulator</strong>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Simulate ±5% national or regional vote share shifts</div>
+              </div>
+              <button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="App.switchTab('simulator_tab')">Simulate</button>
+            </div>
+            <div style="padding: 0.75rem; background: #0f172a; border-radius: var(--radius-sm); border: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>🤖 Grounded AI Election Analyst</strong>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Natural language Q&A backed by real database facts</div>
+              </div>
+              <button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="App.switchTab('analyst_tab')">Ask AI</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. ELECTION DASHBOARD -->
+    <section id="dashboard_tab" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div class="card-title">🔍 Interactive Cascading Filter</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.3rem;">ELECTION CYCLE</label>
+            <select class="select" style="width:100%;">
+              <option>18th Lok Sabha (2024-2026 Forecast)</option>
+              <option>17th Lok Sabha (2019 Historical)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.3rem;">FILTER STATE</label>
+            <select id="cascadeStateSelect" class="select" style="width:100%;">
+              <option value="">All States (National)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.3rem;">CONSTITUENCY JUMP</label>
+            <select id="cascadeConstituencySelect" class="select" style="width:100%;">
+              <option value="">Select Constituency...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-split-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Projected Alliance Seats</div>
+            <div class="card-subtitle">Majority Threshold: 272</div>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="allianceDonutChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Party-Wise Projected Seats</div>
+            <div class="card-subtitle">Top 8 Parties by Forecast Tally</div>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="partySeatsBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div class="card-title">Historical vs Model Forecast Comparison</div>
+          <div class="card-subtitle">2019 Actual vs 2024 Actual vs VoteVision Projection</div>
+        </div>
+        <div style="height: 280px; position: relative;">
+          <canvas id="historicalBarChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. INDIA INTERACTIVE MAP -->
+    <section id="map_tab" class="tab-content">
+      <div style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.5rem; font-weight:800; color:#fff;">🗺️ Interactive India Election Map</h2>
+        <p style="font-size:0.88rem; color:var(--text-secondary);">Click any state on the map to filter parliamentary constituencies or deep-dive state performance.</p>
+      </div>
+
+      <div class="map-layout-container">
+        <div>
+          <div id="mapSvgContainer" class="map-svg-wrapper">
+            <!-- Rendered by map.js -->
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-color" style="background:#ff9933;"></div><span>BJP</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#19aaed;"></div><span>INC</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#20b2aa;"></div><span>AITC</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#b22222;"></div><span>DMK</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#ffd700;"></div><span>TDP</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#94a3b8;"></div><span>Others</span></div>
+          </div>
+        </div>
+
+        <div id="mapStateInspector">
+          <div class="card" style="padding: 2rem; text-align:center;">
+            <div style="font-size: 2rem; margin-bottom:0.5rem;">📍</div>
+            <div class="card-title" style="justify-content:center;">Select a State on the Map</div>
+            <p class="card-subtitle" style="margin-top:0.5rem;">Click any state polygon to inspect all parliamentary constituencies, party leads, and win probabilities.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. STATE ANALYSIS DEEP DIVE -->
+    <section id="state_analysis" class="tab-content">
+      <div id="stateDeepDiveContent">
+        <div class="card" style="text-align:center; padding:3rem;">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">🏛️</div>
+          <div class="card-title" style="justify-content:center;">Select a state from the Map tab or dropdown</div>
+          <p class="card-subtitle">Deep dive into state-level swing dynamics, regional vote share, and strongholds.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CONSTITUENCY PREDICTIONS -->
+    <section id="predictions_tab" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📍 Constituency Forecasts (543 Lok Sabha Seats)</div>
+            <div class="card-subtitle" id="constituencyDisplayCount">Showing 30 of 543 seats</div>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <input id="constituencySearchInput" class="input" type="text" placeholder="Search constituency or state..." style="width: 240px;" />
+            <select id="constituencyStateFilter" class="select">
+              <option value="">All States</option>
+            </select>
+            <select id="constituencyPartyFilter" class="select">
+              <option value="">All Parties</option>
+              <option value="BJP">BJP</option>
+              <option value="INC">INC</option>
+              <option value="SP">SP</option>
+              <option value="AITC">AITC</option>
+              <option value="DMK">DMK</option>
+              <option value="TDP">TDP</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Constituency</th>
+                <th>State</th>
+                <th>Projected Winner</th>
+                <th>Challenger</th>
+                <th>Win Prob</th>
+                <th>Margin</th>
+                <th>Risk Tier</th>
+                <th>XAI Action</th>
+              </tr>
+            </thead>
+            <tbody id="constituencyTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CANDIDATE DIRECTORY & COMPARE -->
+    <section id="candidates_tab" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">👤 Candidate Head-to-Head Comparison Tool</div>
+            <div class="card-subtitle">Select any two candidates to compare electoral strength, past margins, and assets</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.3rem;">CANDIDATE 1</label>
+            <select id="compareCand1Select" class="select" style="width:100%;"></select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.3rem;">CANDIDATE 2</label>
+            <select id="compareCand2Select" class="select" style="width:100%;"></select>
+          </div>
+        </div>
+        <div id="comparisonResultsDisplay">
+          <!-- Rendered by candidates.js -->
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.25rem; font-weight:700; color:#fff;">Candidate Directory</h3>
+        <div style="display:flex; gap:0.5rem;">
+          <input id="candidateSearchInput" class="input" type="text" placeholder="Search candidate or seat..." style="width: 220px;" />
+          <select id="candidatePartyFilter" class="select">
+            <option value="">All Parties</option>
+            <option value="BJP">BJP</option>
+            <option value="INC">INC</option>
+            <option value="SP">SP</option>
+            <option value="AITC">AITC</option>
+            <option value="DMK">DMK</option>
+          </select>
+        </div>
+      </div>
+      <div id="candidatesGrid" class="grid-cards-4">
+        <!-- Rendered by candidates.js -->
+      </div>
+    </section>
+
+    <!-- 7. PARTY ANALYSIS -->
+    <section id="parties_tab" class="tab-content">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight:800; color:#fff;">🏛️ National & Regional Party Intelligence</h2>
+        <p style="font-size:0.88rem; color:var(--text-secondary);">Projected seats, vote share conversion, strongholds, and vulnerable seats for key political entities.</p>
+      </div>
+      <div id="partiesGrid" class="grid-cards-4">
+        <!-- Rendered by app.js -->
+      </div>
+    </section>
+
+    <!-- 8. SWING SIMULATOR -->
+    <section id="simulator_tab" class="tab-content">
+      <div class="simulator-panel">
+        <div>
+          <h2 style="font-size: 1.5rem; font-weight:800; color:#fff;">🔮 Multi-Tier Swing Simulator</h2>
+          <p style="font-size:0.88rem; color:var(--text-secondary);">
+            Simulate vote share swings from national to constituency levels and observe dynamic majority shifts.
+          </p>
+        </div>
+
+        <div class="slider-container">
+          <div class="slider-header">
+            <div>
+              <strong>Uniform Vote Swing Adjustment</strong>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Adjust national baseline vote share swing</div>
+            </div>
+            <div class="slider-val-badge" id="swingValDisplay">0.0%</div>
+          </div>
+          <input id="swingRangeInput" type="range" min="-10" max="10" step="0.5" value="0" class="swing-range-slider" />
+          
+          <div style="display:flex; justify-content:space-between; margin-top:0.4rem; font-size:0.75rem; color:var(--text-muted);">
+            <span>-10% (Opposition Surge)</span>
+            <span>0% Neutral</span>
+            <span>+10% (Ruling Wave)</span>
+          </div>
+
+          <div style="margin-top: 1rem; display:flex; align-items:center; gap: 1rem;">
+            <label style="font-size:0.85rem; color:var(--text-secondary);">Swing Direction Toward:</label>
+            <select id="swingAllianceSelect" class="select">
+              <option value="NDA">NDA Coalition</option>
+              <option value="INDIA">INDIA Coalition</option>
+            </select>
+          </div>
+
+          <div class="scenario-chips-row">
+            <span style="font-size:0.78rem; color:var(--text-muted); align-self:center;">Pre-set Scenarios:</span>
+            <button class="scenario-chip active" data-preset="neutral" onclick="Simulator.applyPreset('neutral', 0.0, 'NDA')">Scenario A — Neutral (0%)</button>
+            <button class="scenario-chip" data-preset="mild" onclick="Simulator.applyPreset('mild', 2.0, 'NDA')">Scenario B — Mild Swing (+2%)</button>
+            <button class="scenario-chip" data-preset="strong" onclick="Simulator.applyPreset('strong', 5.0, 'NDA')">Scenario C — Strong Wave (+5%)</button>
+            <button class="scenario-chip" data-preset="opposition" onclick="Simulator.applyPreset('opposition', -3.5, 'NDA')">Scenario D — Opposition Surge (-3.5%)</button>
+          </div>
+        </div>
+
+        <!-- Simulation Results -->
+        <div class="grid-cards-4">
+          <div class="kpi-card saffron">
+            <div class="kpi-label">NDA Projected Seats</div>
+            <div class="kpi-value" id="simNdaSeats">293</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">Target Majority: 272</div>
+          </div>
+          <div class="kpi-card cyan">
+            <div class="kpi-label">INDIA Projected Seats</div>
+            <div class="kpi-value" id="simIndiaSeats">234</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">Gap to majority: 38</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Others / Regional</div>
+            <div class="kpi-value" id="simOthSeats">16</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">Non-aligned swing</div>
+          </div>
+          <div class="kpi-card emerald">
+            <div class="kpi-label">Majority Verdict</div>
+            <div id="simMajorityStatus" style="margin-top:0.5rem;">
+              <span class="badge badge-nda">NDA Majority</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated Majority Bar -->
+        <div class="majority-bar">
+          <div id="simNdaBar" class="bar-segment segment-nda" style="width: 54%;">NDA</div>
+          <div id="simIndiaBar" class="bar-segment segment-india" style="width: 43%;">INDIA</div>
+          <div id="simOthBar" class="bar-segment segment-others" style="width: 3%;">OTH</div>
+          <div class="majority-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. BATTLEGROUND RACES -->
+    <section id="battlegrounds_tab" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎯 Closest Contests & Battleground Races</div>
+            <div class="card-subtitle">Automatically ranked constituencies with predicted victory margin &lt; 5.0%</div>
+          </div>
+          <span class="badge badge-battleground">High Volatility Seats</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Constituency</th>
+                <th>Leading</th>
+                <th>Challenger</th>
+                <th>Margin</th>
+                <th>Win Prob</th>
+                <th>Demographic</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="battlegroundsTableBody">
+              <!-- Rendered by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. MODEL PERFORMANCE & XAI -->
+    <section id="model_tab" class="tab-content">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight:800; color:#fff;">📈 Model Evaluation & Diagnostic Suite</h2>
+        <p style="font-size:0.88rem; color:var(--text-secondary);">
+          Transparent metrics validating the multi-model ensemble (Random Forest, Gradient Boosting, Logistic Regression, and Calibrated Stacking).
+        </p>
+      </div>
+
+      <div class="grid-cards-4">
+        <div class="kpi-card emerald">
+          <div class="kpi-label">Ensemble Accuracy</div>
+          <div class="kpi-value" id="evalAccuracy">88.7%</div>
+          <div class="kpi-delta positive"><span>●</span> Calibrated CV score</div>
+        </div>
+        <div class="kpi-card cyan">
+          <div class="kpi-label">Precision (Weighted)</div>
+          <div class="kpi-value" id="evalPrecision">87.4%</div>
+          <div class="kpi-delta"><span>●</span> Low false positive rate</div>
+        </div>
+        <div class="kpi-card saffron">
+          <div class="kpi-label">Recall (Weighted)</div>
+          <div class="kpi-value" id="evalRecall">88.7%</div>
+          <div class="kpi-delta"><span>●</span> Seat conversion fidelity</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ROC-AUC Score</div>
+          <div class="kpi-value" id="evalRocAuc">0.924</div>
+          <div class="kpi-delta positive"><span>●</span> High discriminative ability</div>
+        </div>
+      </div>
+
+      <div class="grid-split-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Model Performance Comparison</div>
+            <div class="card-subtitle">Accuracy across component classifiers</div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Model Architecture</th>
+                <th>Accuracy</th>
+                <th>F1-Score</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody id="modelComparisonTableBody">
+              <!-- Rendered by app.js -->
+            </tbody>
+          </table>
+          <div style="margin-top: 1rem; font-size: 0.78rem; color: var(--text-muted);">
+            5-Fold Cross-Validation: <strong id="evalCv" style="color:var(--text-primary);">88.2% (±1.4%)</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Feature Importance (SHAP Global Weights)</div>
+            <div class="card-subtitle">Key drivers influencing predictive outcomes</div>
+          </div>
+          <div style="height: 240px; position: relative;">
+            <canvas id="featureImportanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-split-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Reliability Calibration Curve</div>
+            <div class="card-subtitle">Predicted Probabilities vs Empirical Win Frequencies</div>
+          </div>
+          <div style="height: 240px; position: relative;">
+            <canvas id="calibrationCurveChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Confusion Matrix (Top Parties)</div>
+            <div class="card-subtitle">Ground Truth vs Ensemble Predictions</div>
+          </div>
+          <div id="confusionMatrixContainer">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. AI ELECTION ANALYST -->
+    <section id="analyst_tab" class="tab-content">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight:800; color:#fff;">🤖 Grounded AI Election Analyst</h2>
+        <p style="font-size:0.88rem; color:var(--text-secondary);">
+          Grounded conversational intelligence querying verified Lok Sabha datasets and predictive simulations with zero political hallucinations.
+        </p>
+      </div>
+
+      <div class="analyst-chat-container">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="chat-avatar">AI</div>
+            <div>
+              <div style="font-weight:700; font-size:0.9rem; color:#fff;">VoteVision Grounded Analyst</div>
+              <div style="font-size:0.72rem; color:var(--safe-color);">● Grounded in Live Lok Sabha Database</div>
+            </div>
+          </div>
+          <span class="badge badge-safe">Verified Inference</span>
+        </div>
+
+        <div id="analystChatMessages" class="chat-messages">
+          <!-- Rendered by analyst.js -->
+        </div>
+
+        <div class="chat-suggestions">
+          <button class="suggestion-chip" data-query="Which states have the closest contests?">Which states have the closest contests?</button>
+          <button class="suggestion-chip" data-query="Why is Varanasi competitive?">Why is Varanasi competitive?</button>
+          <button class="suggestion-chip" data-query="What happens if there is a 3% swing to INDIA?">What happens if there is a 3% swing?</button>
+          <button class="suggestion-chip" data-query="Compare BJP and INC party metrics">Compare BJP and INC</button>
+        </div>
+
+        <form id="analystChatForm" class="chat-input-bar">
+          <input id="analystChatInput" class="input" type="text" placeholder="Ask a question about seats, swing scenarios, or candidate races..." />
+          <button type="submit" class="btn btn-primary">Send Question</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 12. METHODOLOGY & DISCLAIMER -->
+    <section id="methodology_tab" class="tab-content">
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight:800; color:#fff; margin-bottom: 1rem;">📚 Methodology & Analytical Architecture</h2>
+        
+        <div style="display:flex; flex-direction:column; gap: 1.25rem; font-size:0.9rem; color:var(--text-secondary); line-height: 1.6;">
+          <div>
+            <strong style="color:#fff; font-size:1.05rem;">1. Data Pipeline & Verification:</strong>
+            <p>Our pipeline ingests official Election Commission of India (ECI) reports for the 2014, 2019, and 2024 General Elections across all 543 parliamentary constituencies. Candidate affidavits, educational backgrounds, asset disclosures, and criminal cases are compiled and normalized.</p>
+          </div>
+
+          <div>
+            <strong style="color:#fff; font-size:1.05rem;">2. Feature Engineering:</strong>
+            <p>Key feature vectors include: (a) Historical base vote share anchor, (b) Inter-election voter turnout momentum, (c) Incumbency fatigue penalty, (d) Demographic urbanization index, (e) District literacy factor, and (f) State-level swing volatility index.</p>
+          </div>
+
+          <div>
+            <strong style="color:#fff; font-size:1.05rem;">3. Multi-Model Ensemble & Calibration:</strong>
+            <p>Predictions are not generated by a single model. An ensemble combining Random Forest (capturing non-linear demographic interactions), Gradient Boosting (capturing swing momentum), and Logistic Regression (maintaining linear anchor priors) is passed through Sigmoid Probability Calibration (<code style="color:var(--accent-blue);">CalibratedClassifierCV</code>) to guarantee reliable probabilistic confidence scores.</p>
+          </div>
+
+          <div>
+            <strong style="color:#fff; font-size:1.05rem;">4. Explainable AI (XAI):</strong>
+            <p>Every constituency forecast outputs an explicit SHAP-style attribution waterfall revealing exactly which factors (turnout, incumbency, baseline vote share) drove the predicted margin and win probability.</p>
+          </div>
+
+          <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); padding: 1rem; border-radius: var(--radius-sm);">
+            <strong style="color: var(--battleground-color);">⚠️ Academic & Educational Disclaimer:</strong>
+            <p style="margin-top: 0.4rem; font-size: 0.82rem; color: #f1f5f9;">
+              VoteVision AI is an educational, portfolio, and research platform intended to demonstrate full-stack data science, machine learning, and explainable AI in public policy analytics. All forecasts are probabilistic statistical estimates and should NOT be interpreted as official election results, exit polls, or voting recommendations.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Side Drawer (Constituency Intelligence & XAI) -->
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  <aside id="constituencyDrawer" class="drawer" aria-label="Constituency Intelligence Drawer">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+      <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">CONSTITUENCY INTELLIGENCE</span>
+      <button id="drawerCloseBtn" class="drawer-close-btn">&times;</button>
+    </div>
+    <div id="drawerContent">
+      <!-- Rendered by xai.js -->
+    </div>
+  </aside>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/simulator.js"></script>
+  <script src="js/candidates.js"></script>
+  <script src="js/xai.js"></script>
+  <script src="js/analyst.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
