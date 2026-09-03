@@ -1649,19 +1649,19 @@ function renderElectionCard(eid, e, showViewButton = false) {
 
             html += `
                 <div class="candidate-item">
-                    <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-                        <span class="${lampClass}" id="lamp-${eid}-${cid}" title="EVM Status Indicator"></span>
+                    <div class="candidate-main-col">
+                        <div class="candidate-lamp-col">
+                            <span class="${lampClass}" id="lamp-${eid}-${cid}" title="EVM Status Indicator"></span>
+                        </div>
                         <div class="candidate-info">
-                            <span class="candidate-name">
-                                ${idx + 1}. ${c.name}
-                            </span>
-                            <div class="candidate-party">
+                            <div class="candidate-name-text">${idx + 1}. ${c.name}</div>
+                            <div class="candidate-meta-row">
                                 <span class="party-tag">${party}</span>
+                                <span class="candidate-vote-tag" id="count-${eid}-${cid}">🗳️ ${cVotes} votes</span>
                             </div>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="vote-count-pill" id="count-${eid}-${cid}" title="Verified Votes">🗳️ ${cVotes} votes</span>
+                    <div class="candidate-action-col">
                         ${actionButtonHtml}
                     </div>
                 </div>

@@ -626,8 +626,8 @@
         align-items: center;
         padding: 12px 14px;
         background: #f8fafc;
-        border-radius: var(--radius-md);
-        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        border: 1.5px solid #e2e8f0;
         gap: 12px;
         transition: all 0.2s ease;
     }
@@ -635,9 +635,60 @@
         background: #f1f5f9;
         border-color: #cbd5e1;
     }
-    .candidate-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
-    .candidate-name { font-weight: 600; color: var(--text-primary); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.95rem; }
-    .candidate-party { font-size: 0.8rem; color: var(--text-muted); }
+    .candidate-main-col {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 0;
+    }
+    .candidate-lamp-col {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .candidate-info { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 3px; 
+        flex: 1; 
+        min-width: 0; 
+    }
+    .candidate-name-text { 
+        font-weight: 700; 
+        color: #0f172a; 
+        font-size: 0.96rem; 
+        line-height: 1.35;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    .candidate-meta-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .candidate-vote-tag {
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        background: rgba(30, 64, 175, 0.08);
+        color: #1e40af;
+        border: 1px solid rgba(30, 64, 175, 0.2);
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        white-space: nowrap;
+    }
+    .candidate-action-col {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-shrink: 0;
+        gap: 6px;
+    }
 
     .vote-count-pill {
         display: inline-flex;
@@ -647,11 +698,11 @@
         background: rgba(4, 106, 56, 0.08);
         color: var(--deepgreen);
         font-family: var(--font-heading);
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 700;
         border-radius: var(--radius-pill);
         border: 1px solid rgba(4, 106, 56, 0.2);
-        margin-left: auto;
+        flex-shrink: 0;
     }
 
     /* Indian EVM Blue Voting Button & Lamp */
@@ -659,35 +710,35 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        min-width: 96px;
-        min-height: 42px;
-        padding: 8px 16px;
+        gap: 6px;
+        min-width: 92px;
+        height: 38px;
+        padding: 6px 14px;
         border-radius: var(--radius-pill);
         background: #1e40af; /* EVM Blue */
         color: #ffffff;
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
+        font-size: 0.84rem;
+        letter-spacing: 0.3px;
         border: none;
         cursor: pointer;
-        box-shadow: 0 3px 10px rgba(30, 64, 175, 0.3);
+        box-shadow: 0 3px 10px rgba(30, 64, 175, 0.25);
         transition: all 0.15s ease;
         flex-shrink: 0;
     }
     .btn-evm-vote:hover {
         background: #1d4ed8;
         transform: scale(1.02);
-        box-shadow: 0 5px 14px rgba(30, 64, 175, 0.4);
+        box-shadow: 0 5px 14px rgba(30, 64, 175, 0.35);
     }
     .btn-evm-vote:active {
         transform: scale(0.96);
     }
 
     .evm-lamp {
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background: #ef4444; /* Ready Red */
         box-shadow: 0 0 6px #ef4444;
@@ -706,15 +757,16 @@
         box-shadow: none !important;
         cursor: default !important;
         transform: none !important;
+        min-width: 92px;
     }
 
     .election-id-admin {
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         color: var(--text-muted);
         margin-bottom: 8px;
         word-break: break-all;
         background: #f1f5f9;
-        padding: 3px 8px;
+        padding: 4px 8px;
         border-radius: var(--radius-sm);
         display: inline-block;
     }
@@ -723,9 +775,11 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 14px;
+        padding: 10px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
     }
    
    /* ======================================================
@@ -1675,4 +1729,75 @@
         0% { transform: scale(0) rotate(-25deg); opacity: 0; }
         70% { transform: scale(1.15) rotate(8deg); opacity: 1; }
         100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    /* ======================================================
+       RESPONSIVE & MOBILE PADDING & SPACING PERFECTION
+       ====================================================== */
+    @media (max-width: 768px) {
+        .app-main {
+            padding: 0 1rem;
+            margin: 1.2rem auto;
+        }
+        .elections-grid {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+        .election-card {
+            padding: 1.15rem;
+            border-radius: 14px;
+        }
+        .candidate-item {
+            padding: 10px 12px;
+            gap: 10px;
+        }
+        .candidate-name-text {
+            font-size: 0.92rem;
+        }
+        .btn-evm-vote {
+            min-width: 86px;
+            height: 36px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+        }
+        .official-portal-box {
+            margin: 1rem;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .official-modal-header {
+            padding: 14px 16px;
+        }
+        .official-evm-unit {
+            padding: 1.2rem;
+            margin: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .nav-container {
+            padding: 0.5rem 0.8rem;
+        }
+        .hero-banner {
+            padding: 1.2rem 1rem;
+        }
+        .hero-banner h2 {
+            font-size: 1.4rem;
+        }
+        .glass-auth-card {
+            padding: 1rem;
+        }
+        .voter-status-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .candidate-item {
+            padding: 10px 10px;
+        }
+        .btn-evm-vote {
+            min-width: 80px;
+            height: 35px;
+            font-size: 0.78rem;
+        }
     }
