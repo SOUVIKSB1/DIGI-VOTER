@@ -1258,11 +1258,6 @@ window.handleVoterLoginSubmit = async function() {
     updateVoterUI(voterUser);
     window.closeVoterAuthModal();
     if (typeof showToast === 'function') showToast(`Authenticated on National Roll: ${voterUser.name} (${selectedState}) ✔`, 'success');
-
-    // Trigger app tour if first time
-    if (localStorage.getItem('digivoter_tour_completed') !== 'true') {
-        setTimeout(() => window.startAppTour(), 400);
-    }
 };
 
 window.handleQuickVoterDemo = function() {
@@ -1447,11 +1442,6 @@ window.selectVoterProfile = function(name, email, constituency, epic, state = 'U
 
     if (typeof showToast === 'function') {
         showToast(`Welcome ${name}! Viewing active ballots for ${state} (${constituency}) ✔`, 'success');
-    }
-
-    // Trigger app tour if first time
-    if (localStorage.getItem('digivoter_tour_completed') !== 'true') {
-        setTimeout(() => window.startAppTour(), 400);
     }
 };
 
@@ -2749,116 +2739,8 @@ window.deleteElectionById = async function deleteElectionById() {
     if (window.loadElections) window.loadElections();
 };
 
-// ==========================================
-// INTERACTIVE APP TOUR & FIRST-TIME GUIDE ENGINE
-// ==========================================
-const tourSteps = [
-    {
-        badge: 'STEP 1 OF 4',
-        title: 'National E-Ballot Portal',
-        icon: '🇮🇳',
-        heading: 'Constitutional Digital Voting',
-        desc: 'Welcome to India\'s official E-Balloting Gateway. Securely browse active Parliamentary (Lok Sabha) and State Assembly (Vidhan Sabha) ballots.'
-    },
-    {
-        badge: 'STEP 2 OF 4',
-        title: 'Elector & Region Filtering',
-        icon: '🗺️',
-        heading: 'State & Assembly Ballots',
-        desc: 'Your active state and constituency are matched to official electoral rolls. Ballots marked nationwide are also visible to all electors.'
-    },
-    {
-        badge: 'STEP 3 OF 4',
-        title: 'EVM-M3 & VVPAT Audit',
-        icon: '🗳️',
-        heading: 'Tamper-Proof Ballot Cast',
-        desc: 'Click "Vote" to trigger the EVM 880Hz audio tone, inspect your printed VVPAT paper slip in the transparent window, and receive digital indelible ink verification.'
-    },
-    {
-        badge: 'STEP 4 OF 4',
-        title: 'Real-Time Results & Tallies',
-        icon: '📊',
-        heading: 'Transparent Live Counting',
-        desc: 'Click "View Live Assembly Results & Tally" on any ballot to inspect instant vote counts, percentage breakdowns, and leading candidates.'
-    }
-];
-
-let currentTourStep = 0;
-
-window.startAppTour = function(force = false) {
-    if (!force && localStorage.getItem('digivoter_tour_completed') === 'true') {
-        return;
-    }
-    currentTourStep = 0;
-    renderTourStep();
-    const modal = document.getElementById('appTourModal');
-    if (modal) modal.style.display = 'flex';
-};
-
-window.skipAppTour = function() {
-    localStorage.setItem('digivoter_tour_completed', 'true');
-    const modal = document.getElementById('appTourModal');
-    if (modal) modal.style.display = 'none';
-};
-
-window.nextTourStep = function() {
-    if (currentTourStep < tourSteps.length - 1) {
-        currentTourStep++;
-        renderTourStep();
-    } else {
-        window.skipAppTour();
-        if (typeof showToast === 'function') {
-            showToast('Welcome to your secret polling booth! Cast your ballot with confidence. 🇮🇳', 'success');
-        }
-    }
-};
-
-window.prevTourStep = function() {
-    if (currentTourStep > 0) {
-        currentTourStep--;
-        renderTourStep();
-    }
-};
-
-function renderTourStep() {
-    const step = tourSteps[currentTourStep];
-    if (!step) return;
-
-    const badge = document.getElementById('tourStepBadge');
-    const title = document.getElementById('tourTitle');
-    const icon = document.getElementById('tourIconHero');
-    const heading = document.getElementById('tourSlideHeading');
-    const desc = document.getElementById('tourSlideDesc');
-    const prevBtn = document.getElementById('tourPrevBtn');
-    const nextBtn = document.getElementById('tourNextBtn');
-    const dotsContainer = document.getElementById('tourDots');
-
-    if (badge) badge.textContent = step.badge;
-    if (title) title.textContent = step.title;
-    if (icon) icon.textContent = step.icon;
-    if (heading) heading.textContent = step.heading;
-    if (desc) desc.textContent = step.desc;
-
-    if (prevBtn) prevBtn.style.display = currentTourStep > 0 ? 'inline-flex' : 'none';
-    if (nextBtn) {
-        if (currentTourStep === tourSteps.length - 1) {
-            nextBtn.textContent = '🚀 Start Voting';
-            nextBtn.style.background = '#046a38';
-        } else {
-            nextBtn.textContent = 'Next ➔';
-            nextBtn.style.background = '#046a38';
-        }
-    }
-
-    if (dotsContainer) {
-        dotsContainer.innerHTML = tourSteps.map((_, i) => 
-            `<span class="tour-dot ${i === currentTourStep ? 'active' : ''}"></span>`
-        ).join('');
-    }
-}
-
-// Initial First-Time Auth & Tour Bootstrap
-function checkInitialAuthAndTour() {
+// Initial First-Time Auth Bootstrap
+function checkInitialAuth() {
     const hasAuth = localStorage.getItem('voterAuthSession') === 'true' && localStorage.getItem('localUser');
     const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
     
@@ -2866,11 +2748,7 @@ function checkInitialAuthAndTour() {
         setTimeout(() => {
             window.openVoterAuthModal('login');
         }, 300);
-    } else if (localStorage.getItem('digivoter_tour_completed') !== 'true') {
-        setTimeout(() => {
-            window.startAppTour();
-        }, 400);
     }
 }
 
-setTimeout(checkInitialAuthAndTour, 250);
+setTimeout(checkInitialAuth, 250);

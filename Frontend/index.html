@@ -53,11 +53,6 @@
                 <span id="backendStatus" style="display:none;"></span>
                 <span id="currentRoleBadge" style="display:none;"></span>
                 
-                <!-- Quick App Tour Button -->
-                <button class="btn-glass-action" onclick="window.startAppTour ? window.startAppTour(true) : null" title="Take an interactive tour of the platform">
-                    <span style="font-size:0.95rem;">🧭</span>
-                    <span>App Tour</span>
-                </button>
             </div>
         </div>
     </nav>
@@ -826,44 +821,6 @@
                 </button>
             </div>
         </div>
-    <!-- INTERACTIVE APP TOUR / FIRST-TIME ELECTOR GUIDE MODAL -->
-    <div id="appTourModal" class="voter-modal-overlay" style="display:none; z-index:3600;" onclick="if(event.target===this) skipAppTour()">
-        <div class="voter-modal-box tour-modal-box">
-            <!-- Tour Header -->
-            <div class="tour-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:1.4rem;">🧭</span>
-                    <div>
-                        <span class="tour-step-badge" id="tourStepBadge">STEP 1 OF 4</span>
-                        <h3 class="tour-title" id="tourTitle">Welcome to DIGI-VOTER</h3>
-                    </div>
-                </div>
-                <button class="tour-skip-btn" onclick="skipAppTour()" title="Skip this guide">Skip Tour ✕</button>
-            </div>
-
-            <!-- Tour Body Content (Dynamic Slide) -->
-            <div class="tour-body" id="tourBody">
-                <div class="tour-icon-hero" id="tourIconHero">🇮🇳</div>
-                <h4 class="tour-slide-heading" id="tourSlideHeading">National E-Ballot Portal</h4>
-                <p class="tour-slide-desc" id="tourSlideDesc">
-                    Welcome to India's official Digital Balloting Platform. Participate in constitutional decision-making, inspect candidates, and cast encrypted secret ballots.
-                </p>
-            </div>
-
-            <!-- Tour Footer Controls -->
-            <div class="tour-footer">
-                <div class="tour-dots" id="tourDots">
-                    <span class="tour-dot active"></span>
-                    <span class="tour-dot"></span>
-                    <span class="tour-dot"></span>
-                    <span class="tour-dot"></span>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <button class="btn btn-outline btn-sm" id="tourPrevBtn" onclick="prevTourStep()" style="display:none;">Back</button>
-                    <button class="btn btn-primary btn-sm" id="tourNextBtn" style="background:#046a38; font-weight:700;" onclick="nextTourStep()">Next ➔</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Toast Notification Container -->
@@ -893,17 +850,6 @@
             if (tabName === 'analytics' && window.loadAnalytics) window.loadAnalytics();
             if (tabName === 'voters' && window.loadVotersPaginated) window.loadVotersPaginated(1);
             if (tabName === 'manageElections' && window.loadElections) window.loadElections();
-        };
-
-        // App Tour Direct Trigger Fallback
-        window.startAppTour = window.startAppTour || function(force = false) {
-            const modal = document.getElementById('appTourModal');
-            if (modal) modal.style.display = 'flex';
-        };
-        window.skipAppTour = window.skipAppTour || function() {
-            localStorage.setItem('digivoter_tour_completed', 'true');
-            const modal = document.getElementById('appTourModal');
-            if (modal) modal.style.display = 'none';
         };
 
         // Toast Notification System
