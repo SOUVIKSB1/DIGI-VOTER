@@ -1036,7 +1036,6 @@ function renderFilteredElections(electionList) {
             const cleanAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             return cleanAss.includes(cleanTarget) || cleanTarget.includes(cleanAss);
         });
-        if (displayed.length === 0) displayed = electionList;
     }
 
     const bannerTextEl = document.getElementById('assemblyBannerText');
@@ -1051,6 +1050,18 @@ function renderFilteredElections(electionList) {
     }
 
     electionsDiv.innerHTML = '';
+    if (displayed.length === 0) {
+        electionsDiv.innerHTML = `
+            <div style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:16px; border:1px dashed #cbd5e1; margin:1rem 0;">
+                <span style="font-size:2.2rem; display:block; margin-bottom:8px;">🏛️</span>
+                <h4 style="margin:0; color:#0f172a; font-size:1.1rem;">No Active Ballots for ${voterAssembly}</h4>
+                <p class="muted" style="margin:6px 0 0 0; font-size:0.85rem;">
+                    In accordance with electoral guidelines, only verified voters of this assembly can cast ballots here.
+                </p>
+            </div>
+        `;
+        return;
+    }
     displayed.forEach(e => {
         const eid = e.id || e._id;
         if (e._isBackend) {
@@ -1285,17 +1296,118 @@ window.handleCustomAdminLogin = function() {
     window.authenticateAsAdmin(email, pass);
 };
 
-window.confirmAndVote = function(eid, cid, cNameEnc, partyEnc, isBackendElection) {
+// --- 1-Click Voter Identity Selector (No ID typing needed) ---
+window.selectVoterProfile = function(name, email, constituency, epic) {
+    const voterUser = {
+        id: 'voter-' + email.split('@')[0],
+        name: name,
+        email: email,
+        epic: epic,
+        constituency: constituency,
+        role: 'voter'
+    };
+    localStorage.setItem('localUser', JSON.stringify(voterUser));
+    localStorage.setItem('backendUser', JSON.stringify(voterUser));
+    localStorage.setItem('backendToken', 'mock-voter-token-' + email.split('@')[0]);
+    localStorage.setItem('voterAssembly', constituency);
+
+    updateVoterUI(voterUser);
+    window.closeVoterAuthModal();
+
+    if (typeof showToast === 'function') {
+        showToast(`Welcome ${name}! Viewing active ballots for ${constituency} ✔`, 'success');
+    }
+};
+
+window.toggleManualVoterLogin = function() {
+    const p = document.getElementById('manualVoterLoginPane');
+    if (p) p.style.display = (p.style.display === 'none' || !p.style.display) ? 'block' : 'none';
+};
+
+// Web Audio API EVM Beep Tone Synthesizer
+function playEvmBeep() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime); // Standard EVM 880Hz confirmation tone
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+    } catch(e) {}
+}
+
+window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendElection) {
     const cName = decodeURIComponent(cNameEnc);
     const party = decodeURIComponent(partyEnc);
-    const conf = confirm(`🗳️ CONFIRM YOUR BALLOT\n\nElection ID: ${eid}\nCandidate: ${cName}\nParty: ${party}\n\nDo you want to confirm your vote? In accordance with the voting procedure, your vote is secret and cannot be reversed.`);
-    if (!conf) return;
 
-    if (isBackendElection) {
-        return window.voteBackend(eid, cid);
-    } else {
-        return window.vote(eid, cid);
+    // 1. Double-check functional dates
+    const elections = getLocalElections();
+    const e = elections.find(x => x.id === eid || x._id === eid);
+    const now = new Date();
+    if (e) {
+        if (e.startDate && new Date(e.startDate) > now) {
+            return alert(`Voting has not started yet. Polls open on ${new Date(e.startDate).toLocaleDateString('en-IN')}.`);
+        }
+        if (e.endDate && new Date(new Date(e.endDate).setHours(23, 59, 59, 999)) < now) {
+            return alert(`Voting for this election has concluded on ${new Date(e.endDate).toLocaleDateString('en-IN')}.`);
+        }
     }
+
+    // 2. Play iconic EVM tone synthesizer
+    playEvmBeep();
+
+    // 3. Show EVM Cast Modal with VVPAT Animation
+    const modal = document.getElementById('evmCastAnimationModal');
+    const slip = document.getElementById('vvpatSlip');
+    const candNameEl = document.getElementById('vvpatCandidateName');
+    const partyEl = document.getElementById('vvpatPartyName');
+    const timeEl = document.getElementById('vvpatTimestamp');
+    const lampLed = document.getElementById('evmLampLed');
+    const lampText = document.getElementById('evmLampText');
+    const confirmedSec = document.getElementById('evmConfirmedSection');
+
+    if (candNameEl) candNameEl.textContent = cName;
+    if (partyEl) partyEl.textContent = party;
+    if (timeEl) timeEl.textContent = 'Ballot cast: ' + new Date().toLocaleTimeString('en-IN');
+    if (lampLed) lampLed.className = 'evm-lamp-led active';
+    if (lampText) lampText.textContent = 'BALLOT RECORDING...';
+    if (confirmedSec) confirmedSec.style.display = 'none';
+
+    if (slip) {
+        slip.className = 'vvpat-paper-slip';
+        void slip.offsetWidth; // Trigger browser reflow
+        slip.classList.add('printed');
+    }
+
+    if (modal) modal.style.display = 'flex';
+
+    // 4. Submit vote via backend
+    if (isBackendElection) {
+        window.voteBackend(eid, cid);
+    } else {
+        window.vote(eid, cid);
+    }
+
+    // 5. After 1.2s: Slip drops into ballot box, Indelible ink stamped
+    setTimeout(() => {
+        if (slip) slip.classList.add('dropped');
+        if (confirmedSec) confirmedSec.style.display = 'block';
+        if (lampText) lampText.textContent = 'VERIFIED & RECORDED';
+        playEvmBeep();
+    }, 1200);
+
+    // 6. Close modal smoothly after 2.6s
+    setTimeout(() => {
+        if (modal) modal.style.display = 'none';
+        if (slip) slip.className = 'vvpat-paper-slip';
+    }, 2600);
 };
 
 function renderElectionCard(eid, e, showViewButton = false) {
@@ -1306,11 +1418,26 @@ function renderElectionCard(eid, e, showViewButton = false) {
     const card = document.createElement('div');
     card.className = 'election-card';
 
-    // Dates formatting
+    // 100% FUNCTIONAL DATE CALCULATION
+    const now = new Date();
+    let isUpcoming = false;
+    let isClosed = false;
+    let pollBadgeHtml = '<span class="status-badge online" style="font-size:0.75rem;">🟢 Active Ballot</span>';
     let datesText = '';
-    if (e.startDate || e.endDate) {
-        const s = e.startDate ? new Date(e.startDate).toLocaleDateString() : 'Active';
-        const end = e.endDate ? new Date(e.endDate).toLocaleDateString() : 'Ongoing';
+
+    if (e.startDate && new Date(e.startDate) > now) {
+        isUpcoming = true;
+        const sDateStr = new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        pollBadgeHtml = `<span class="status-badge" style="font-size:0.75rem; background:#fef3c7; color:#92400e; border:1px solid #fde68a;">⏳ Upcoming Poll</span>`;
+        datesText = `📅 Polls Open on: ${sDateStr}`;
+    } else if (e.endDate && new Date(new Date(e.endDate).setHours(23, 59, 59, 999)) < now) {
+        isClosed = true;
+        const eDateStr = new Date(e.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        pollBadgeHtml = `<span class="status-badge" style="font-size:0.75rem; background:#fee2e2; color:#991b1b; border:1px solid #fecaca;">🔒 Polls Closed</span>`;
+        datesText = `📅 Voting Concluded on: ${eDateStr}`;
+    } else if (e.startDate || e.endDate) {
+        const s = e.startDate ? new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Now';
+        const end = e.endDate ? new Date(e.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Ongoing';
         datesText = `📅 Poll Window: ${s} — ${end}`;
     }
 
@@ -1331,14 +1458,14 @@ function renderElectionCard(eid, e, showViewButton = false) {
                 <p class="muted" style="font-size:0.85rem; margin-top:3px;">${description}</p>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
-                <span class="status-badge online" style="font-size:0.75rem;">Active Ballot</span>
+                ${pollBadgeHtml}
                 <span class="vote-count-pill" style="font-size:0.75rem; background:rgba(30,64,175,0.08); color:#1e40af; border-color:rgba(30,64,175,0.2);">🗳️ ${totalVotesCount} Total Ballots</span>
             </div>
         </div>
     `;
 
     if (datesText) {
-        html += `<div class="election-dates">${datesText}</div>`;
+        html += `<div class="election-dates" style="font-weight:600; font-size:0.8rem; color:#475569;">${datesText}</div>`;
     }
 
     if (showViewButton) {
@@ -1399,6 +1526,10 @@ function renderElectionCard(eid, e, showViewButton = false) {
 
             if (isAdminRole) {
                 actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled title="Administrators cannot cast ballots">Admin</button>`;
+            } else if (isUpcoming) {
+                actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled style="opacity:0.6; cursor:not-allowed;" title="Polls open on ${new Date(e.startDate).toLocaleDateString()}">Opens Soon ⏳</button>`;
+            } else if (isClosed) {
+                actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled style="opacity:0.6; cursor:not-allowed;" title="Polls closed on ${new Date(e.endDate).toLocaleDateString()}">Closed 🔒</button>`;
             } else if (hasVotedForThis) {
                 lampClass = 'evm-lamp voted';
                 actionButtonHtml = `<button class="btn btn-evm-vote btn-voted" disabled>VOTED ✔</button>`;
@@ -1430,6 +1561,8 @@ function renderElectionCard(eid, e, showViewButton = false) {
         });
     }
     html += `</div>`;
+
+
 
     // Live Assembly Results & Tally Footer on Card
     html += `

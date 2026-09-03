@@ -32,8 +32,15 @@ exports.castVote = async (req, res) => {
         if (election.isActive === false) {
             return res.status(400).json({ message: 'This election is not currently active.' });
         }
-        if (election.endDate && now > new Date(new Date(election.endDate).getTime() + 24*60*60*1000)) {
-            return res.status(400).json({ message: 'Voting for this election has concluded.' });
+        if (election.startDate && now < new Date(election.startDate)) {
+            return res.status(400).json({ 
+                message: `Voting has not started yet. Polls open on ${new Date(election.startDate).toLocaleDateString('en-IN')}.` 
+            });
+        }
+        if (election.endDate && now > new Date(new Date(election.endDate).setHours(23, 59, 59, 999))) {
+            return res.status(400).json({ 
+                message: `Voting for this election has concluded on ${new Date(election.endDate).toLocaleDateString('en-IN')}.` 
+            });
         }
 
         // Resolve candidate ID if slug or string passed
