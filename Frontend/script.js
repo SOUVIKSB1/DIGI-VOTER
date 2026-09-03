@@ -1230,14 +1230,24 @@ window.switchVoterModalTab = function(tab) {
 
 window.handleVoterLoginSubmit = async function() {
     const inputVal = (document.getElementById('voterLoginEmail')?.value || '').trim();
-    const selectedState = document.getElementById('voterLoginState')?.value || localStorage.getItem('voterState') || 'Uttar Pradesh';
     if (!inputVal) return alert('Please enter your Voter EPIC Number or Registered Email.');
 
     // Support both direct email or EPIC number input
     let email = inputVal.includes('@') ? inputVal : (inputVal.toLowerCase().replace(/[^a-z0-9]/g, '') + '@digivoter.gov.in');
-    let voterName = inputVal.includes('@') ? inputVal.split('@')[0] : ('Elector ' + inputVal.toUpperCase());
-    let epic = inputVal.includes('@') ? ('VOT-2026-' + Math.floor(1000 + Math.random() * 9000)) : inputVal.toUpperCase();
-    let constituency = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
+    
+    // Look up registered voter profile if existing in directory
+    let matchedVoter = null;
+    try {
+        const allRegistered = JSON.parse(localStorage.getItem('registeredVotersList') || '[]');
+        matchedVoter = allRegistered.find(v => (v.email && v.email.toLowerCase() === email.toLowerCase()) || 
+                                              (v.epic && v.epic.toUpperCase() === inputVal.toUpperCase()) ||
+                                              (v.email && v.email.toLowerCase() === inputVal.toLowerCase()));
+    } catch(e) {}
+
+    let selectedState = matchedVoter ? matchedVoter.state : (localStorage.getItem('voterState') || 'Uttar Pradesh');
+    let constituency = matchedVoter ? matchedVoter.constituency : (localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)');
+    let voterName = matchedVoter ? matchedVoter.name : (inputVal.includes('@') ? inputVal.split('@')[0] : ('Elector ' + inputVal.toUpperCase()));
+    let epic = matchedVoter ? matchedVoter.epic : (inputVal.includes('@') ? ('VOT-2026-' + Math.floor(1000 + Math.random() * 9000)) : inputVal.toUpperCase());
 
     // Fetch token for this specific voter
     try {
@@ -1310,6 +1320,16 @@ window.handleVoterRegisterSubmit = function() {
         constituency: constituency,
         role: 'voter'
     };
+
+    // Save to registered voters directory
+    try {
+        const list = JSON.parse(localStorage.getItem('registeredVotersList') || '[]');
+        const idx = list.findIndex(v => v.email === email || v.epic === epic);
+        if (idx >= 0) list[idx] = newVoter;
+        else list.push(newVoter);
+        localStorage.setItem('registeredVotersList', JSON.stringify(list));
+    } catch(e) {}
+
     localStorage.setItem('authenticatedVoterUser', JSON.stringify(newVoter));
     localStorage.setItem('localUser', JSON.stringify(newVoter));
     localStorage.setItem('backendUser', JSON.stringify(newVoter));
