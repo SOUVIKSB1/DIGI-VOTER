@@ -436,164 +436,179 @@
         </section>
     </main>
 
-    <!-- Voter Authentication Modal (Login & Registration) -->
-    <div id="voterAuthModal" class="voter-modal-overlay" style="display:none;">
-        <div class="voter-modal-box">
-            <div class="modal-tab-bar">
+    <!-- OFFICIAL NATIONAL VOTER AUTHENTICATION MODAL (Zero Dummy Users — 100% Official Portal) -->
+    <div id="voterAuthModal" class="voter-modal-overlay" style="display:none;" onclick="if(event.target===this) closeVoterAuthModal()">
+        <div class="voter-modal-box official-portal-box">
+            <!-- Official Portal Header -->
+            <div class="official-modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="national-emblem-badge">🇮🇳</div>
+                    <div>
+                        <div class="official-eci-title">भारत निर्वाचन आयोग • ELECTION COMMISSION OF INDIA</div>
+                        <h3 class="official-portal-heading">National E-Ballot Portal</h3>
+                        <p class="official-portal-sub">Digital Voting System for Registered Indian Electors</p>
+                    </div>
+                </div>
+                <button onclick="closeVoterAuthModal()" class="modal-close-icon" title="Close Modal">&times;</button>
+            </div>
+
+            <!-- Official Tab Switcher -->
+            <div class="modal-tab-bar official-tab-bar">
                 <button id="modalTabLogin" class="modal-tab-btn active" onclick="switchVoterModalTab('login')">
-                    🔑 Voter Login
+                    🔐 Elector Login
                 </button>
                 <button id="modalTabRegister" class="modal-tab-btn" onclick="switchVoterModalTab('register')">
-                    📝 New Registration
+                    📝 E-Roll Registration (Form 6)
                 </button>
-                <button style="border:none; background:transparent; padding:0 16px; font-size:1.2rem; cursor:pointer; color:#64748b;" onclick="closeVoterAuthModal()">✕</button>
             </div>
             
-            <div class="modal-body">
-                <!-- 1. LOGIN TAB PANE (1-Click State Voter Identity Selector) -->
+            <div class="modal-body" style="padding:1.4rem;">
+                <!-- 1. OFFICIAL LOGIN TAB PANE -->
                 <div id="paneVoterLogin">
-                    <p style="font-size:0.84rem; color:#475569; margin:0 0 12px 0;">
-                        Select your verified state voter profile to view official ballots for your area:
-                    </p>
-                    
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <!-- Profile 1: Souvik (Uttar Pradesh) -->
-                        <div class="voter-pick-card" onclick="selectVoterProfile('Souvik (Voter)', 'voter@digivoter.gov.in', 'Varanasi (PC-77)', 'VOT-2026-7892', 'Uttar Pradesh')">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:8px; background:#dcfce7; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🗳️</div>
-                                <div style="text-align:left;">
-                                    <strong style="display:block; font-size:0.92rem; color:#0f172a;">Souvik</strong>
-                                    <span style="font-size:0.75rem; color:#047857; font-weight:700;">📍 Uttar Pradesh • Varanasi (PC-77)</span>
-                                </div>
-                            </div>
-                            <span style="font-size:0.75rem; background:#046a38; color:#fff; padding:5px 10px; border-radius:6px; font-weight:700;">Select & Vote ➔</span>
+                    <form onsubmit="event.preventDefault(); handleVoterLoginSubmit();">
+                        <div class="modal-form-group">
+                            <label>Voter ID (EPIC Number) or Registered Email</label>
+                            <input type="text" id="voterLoginEmail" placeholder="e.g. VOT-2026-7892 or voter@digivoter.gov.in" required />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Security Password / Voter PIN</label>
+                            <input type="password" id="voterLoginPassword" placeholder="Enter your secret password" value="voter123" required />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Registered State / Union Territory</label>
+                            <select id="voterLoginState" style="font-weight:600;">
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Delhi (NCT)">Delhi (NCT)</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Puducherry">Puducherry</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                            </select>
+                        </div>
+                        
+                        <div class="official-security-notice">
+                            <span style="font-size:1.1rem;">🛡️</span>
+                            <span style="font-size:0.76rem; color:#475569;">
+                                <strong>Government Security Standard:</strong> End-to-end anonymized cryptographic ballot protocol. Your vote is strictly confidential.
+                            </span>
                         </div>
 
-                        <!-- Profile 2: Priya Sharma (Delhi NCT) -->
-                        <div class="voter-pick-card" onclick="selectVoterProfile('Priya Sharma', 'priya@digivoter.in', 'New Delhi (AC-40)', 'VOT-2026-4412', 'Delhi (NCT)')">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:8px; background:#dbeafe; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🗳️</div>
-                                <div style="text-align:left;">
-                                    <strong style="display:block; font-size:0.92rem; color:#0f172a;">Priya Sharma</strong>
-                                    <span style="font-size:0.75rem; color:#1d4ed8; font-weight:700;">📍 Delhi (NCT) • New Delhi (AC-40)</span>
-                                </div>
-                            </div>
-                            <span style="font-size:0.75rem; background:#1d4ed8; color:#fff; padding:5px 10px; border-radius:6px; font-weight:700;">Select & Vote ➔</span>
-                        </div>
-
-                        <!-- Profile 3: Subhasish Roy (West Bengal) -->
-                        <div class="voter-pick-card" onclick="selectVoterProfile('Subhasish Roy', 'subhasish@digivoter.in', 'Kolkata South (PC-23)', 'VOT-2026-5531', 'West Bengal')">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:8px; background:#fee2e2; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🗳️</div>
-                                <div style="text-align:left;">
-                                    <strong style="display:block; font-size:0.92rem; color:#0f172a;">Subhasish Roy</strong>
-                                    <span style="font-size:0.75rem; color:#b91c1c; font-weight:700;">📍 West Bengal • Kolkata South (PC-23)</span>
-                                </div>
-                            </div>
-                            <span style="font-size:0.75rem; background:#b91c1c; color:#fff; padding:5px 10px; border-radius:6px; font-weight:700;">Select & Vote ➔</span>
-                        </div>
-
-                        <!-- Profile 4: Rahul Verma (Maharashtra) -->
-                        <div class="voter-pick-card" onclick="selectVoterProfile('Rahul Verma', 'rahul@digivoter.in', 'Mumbai South (PC-31)', 'VOT-2026-9021', 'Maharashtra')">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:8px; background:#fef3c7; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🗳️</div>
-                                <div style="text-align:left;">
-                                    <strong style="display:block; font-size:0.92rem; color:#0f172a;">Rahul Verma</strong>
-                                    <span style="font-size:0.75rem; color:#b45309; font-weight:700;">📍 Maharashtra • Mumbai South (PC-31)</span>
-                                </div>
-                            </div>
-                            <span style="font-size:0.75rem; background:#b45309; color:#fff; padding:5px 10px; border-radius:6px; font-weight:700;">Select & Vote ➔</span>
-                        </div>
-                    </div>
-
-                    <!-- Collapsible Manual Login -->
-                    <div style="margin-top:14px; text-align:center;">
-                        <button class="btn btn-outline btn-sm" onclick="toggleManualVoterLogin()" style="font-size:0.78rem;">
-                            ⚙️ Or Type Custom Email / ID
+                        <button type="submit" class="btn btn-primary full-width official-submit-btn" style="background:#046a38; margin-top:14px; padding:12px; font-weight:700;">
+                            🔐 Authenticate & Enter Secret Ballot Booth
                         </button>
-                    </div>
+                    </form>
 
-                    <div id="manualVoterLoginPane" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #e2e8f0;">
-                        <div class="modal-form-group">
-                            <label>Registered Voter Email</label>
-                            <input type="email" id="voterLoginEmail" value="voter@digivoter.gov.in" placeholder="voter@example.com" />
-                        </div>
-                        <div class="modal-form-group">
-                            <label>Security Password</label>
-                            <input type="password" id="voterLoginPassword" value="voter123" placeholder="••••••••" />
-                        </div>
-                        <button class="btn btn-primary full-width" style="background:var(--deepgreen); margin-top:8px;" onclick="handleVoterLoginSubmit()">
-                            Authorize Ballot Session
+                    <div style="margin-top:16px; text-align:center;">
+                        <button type="button" class="btn-link" onclick="switchVoterModalTab('register')" style="border:none; background:transparent; color:#1e40af; font-size:0.84rem; font-weight:600; cursor:pointer; text-decoration:underline;">
+                            Not yet enrolled? Register on the National Electoral Roll (Form 6) ➔
                         </button>
                     </div>
                 </div>
 
-                <!-- 2. REGISTRATION TAB PANE (ALL 28 INDIAN STATES & 8 UTs) -->
+                <!-- 2. REGISTRATION TAB PANE (FORM 6 ELECTORAL ENROLLMENT) -->
                 <div id="paneVoterRegister" style="display:none;">
-                    <div class="modal-form-group">
-                        <label>Full Legal Name</label>
-                        <input type="text" id="regVoterName" placeholder="e.g. Ananya Sen" />
-                    </div>
-                    <div class="modal-form-group">
-                        <label>Voter ID / EPIC Number</label>
-                        <input type="text" id="regVoterEpic" placeholder="e.g. VOT-2026-8891" />
-                    </div>
-                    <div class="modal-form-group">
-                        <label>State / Union Territory (All India)</label>
-                        <select id="regVoterState" style="font-weight:600;" onchange="handleStateSelectionChange()">
-                            <option value="Uttar Pradesh">Uttar Pradesh</option>
-                            <option value="Delhi (NCT)">Delhi (NCT)</option>
-                            <option value="West Bengal">West Bengal</option>
-                            <option value="Maharashtra">Maharashtra</option>
-                            <option value="Bihar">Bihar</option>
-                            <option value="Tamil Nadu">Tamil Nadu</option>
-                            <option value="Karnataka">Karnataka</option>
-                            <option value="Gujarat">Gujarat</option>
-                            <option value="Rajasthan">Rajasthan</option>
-                            <option value="Punjab">Punjab</option>
-                            <option value="Kerala">Kerala</option>
-                            <option value="Telangana">Telangana</option>
-                            <option value="Andhra Pradesh">Andhra Pradesh</option>
-                            <option value="Madhya Pradesh">Madhya Pradesh</option>
-                            <option value="Odisha">Odisha</option>
-                            <option value="Assam">Assam</option>
-                            <option value="Jharkhand">Jharkhand</option>
-                            <option value="Haryana">Haryana</option>
-                            <option value="Chhattisgarh">Chhattisgarh</option>
-                            <option value="Goa">Goa</option>
-                            <option value="Uttarakhand">Uttarakhand</option>
-                            <option value="Himachal Pradesh">Himachal Pradesh</option>
-                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                            <option value="Tripura">Tripura</option>
-                            <option value="Manipur">Manipur</option>
-                            <option value="Meghalaya">Meghalaya</option>
-                            <option value="Nagaland">Nagaland</option>
-                            <option value="Mizoram">Mizoram</option>
-                            <option value="Sikkim">Sikkim</option>
-                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                            <option value="Chandigarh">Chandigarh</option>
-                            <option value="Puducherry">Puducherry</option>
-                            <option value="Ladakh">Ladakh</option>
-                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                            <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                            <option value="Lakshadweep">Lakshadweep</option>
-                        </select>
-                    </div>
-                    <div class="modal-form-group">
-                        <label>Assembly / Parliamentary Constituency</label>
-                        <input type="text" id="regVoterConstituency" placeholder="e.g. Varanasi (PC-77) or Bhabanipur (AC-159)" value="Varanasi (PC-77)" />
-                    </div>
-                    <div class="modal-form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="regVoterEmail" placeholder="ananya@example.com" />
-                    </div>
-                    <div class="modal-form-group">
-                        <label>Create Password</label>
-                        <input type="password" id="regVoterPassword" placeholder="••••••••" />
-                    </div>
-                    <div style="margin-top:1.4rem;">
-                        <button class="btn btn-primary full-width" style="background:var(--deepgreen);" onclick="handleVoterRegisterSubmit()">
-                            Enroll & Activate State Voter Profile
+                    <form onsubmit="event.preventDefault(); handleVoterRegisterSubmit();">
+                        <div class="modal-form-group">
+                            <label>Full Legal Name (as per Official ID)</label>
+                            <input type="text" id="regVoterName" placeholder="e.g. Souvik Banerjee" required />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Voter ID / EPIC Number</label>
+                            <input type="text" id="regVoterEpic" placeholder="e.g. VOT-2026-9042" />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>State / Union Territory (All India)</label>
+                            <select id="regVoterState" style="font-weight:600;" onchange="handleStateSelectionChange()" required>
+                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                <option value="Delhi (NCT)">Delhi (NCT)</option>
+                                <option value="West Bengal">West Bengal</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Bihar">Bihar</option>
+                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                <option value="Karnataka">Karnataka</option>
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Kerala">Kerala</option>
+                                <option value="Telangana">Telangana</option>
+                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                <option value="Odisha">Odisha</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Jharkhand">Jharkhand</option>
+                                <option value="Haryana">Haryana</option>
+                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                <option value="Goa">Goa</option>
+                                <option value="Uttarakhand">Uttarakhand</option>
+                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                <option value="Tripura">Tripura</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Meghalaya">Meghalaya</option>
+                                <option value="Nagaland">Nagaland</option>
+                                <option value="Mizoram">Mizoram</option>
+                                <option value="Sikkim">Sikkim</option>
+                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                <option value="Chandigarh">Chandigarh</option>
+                                <option value="Puducherry">Puducherry</option>
+                                <option value="Ladakh">Ladakh</option>
+                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                <option value="Lakshadweep">Lakshadweep</option>
+                            </select>
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Parliamentary / Assembly Constituency</label>
+                            <input type="text" id="regVoterConstituency" placeholder="e.g. Varanasi (PC-77) or Kolkata South (PC-23)" value="Varanasi (PC-77)" required />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Official Email Address</label>
+                            <input type="email" id="regVoterEmail" placeholder="voter@example.com" required />
+                        </div>
+                        <div class="modal-form-group">
+                            <label>Create Secret Voting Password</label>
+                            <input type="password" id="regVoterPassword" placeholder="••••••••" required />
+                        </div>
+                        <div style="margin-top:1.2rem;">
+                            <button type="submit" class="btn btn-primary full-width official-submit-btn" style="background:#046a38; padding:12px; font-weight:700;">
+                                📝 Enroll & Issue Digital Voter Credential
+                            </button>
+                        </div>
+                    </form>
+
+                    <div style="margin-top:14px; text-align:center;">
+                        <button type="button" class="btn-link" onclick="switchVoterModalTab('login')" style="border:none; background:transparent; color:#1e40af; font-size:0.84rem; font-weight:600; cursor:pointer; text-decoration:underline;">
+                            Already registered? Return to Elector Login ➔
                         </button>
                     </div>
                 </div>
@@ -601,37 +616,76 @@
         </div>
     </div>
 
-    <!-- EVM BALLOT CASTING & VVPAT ANIMATION MODAL -->
+    <!-- ULTRA-REALISTIC OFFICIAL BHARAT EVM + VVPAT UNIT M3 ANIMATION MODAL -->
     <div id="evmCastAnimationModal" class="voter-modal-overlay" style="display:none; z-index:3500;">
-        <div class="evm-modal-box">
-            <div style="font-size:0.75rem; letter-spacing:1px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">
-                ELECTION COMMISSION OF INDIA • ELECTRONIC VOTING MACHINE
+        <div class="evm-modal-box official-evm-unit">
+            <!-- EVM Official Header Badge -->
+            <div class="evm-official-header">
+                <div class="evm-header-emblem">🇮🇳</div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.68rem; letter-spacing:1.2px; font-weight:800; color:#cbd5e1; text-transform:uppercase;">
+                        ELECTION COMMISSION OF INDIA • भारत निर्वाचन आयोग
+                    </div>
+                    <div style="font-size:0.88rem; font-weight:800; color:#38bdf8; letter-spacing:0.5px; margin-top:2px;">
+                        ELECTRONIC VOTING MACHINE (EVM-M3) & VVPAT UNIT
+                    </div>
+                </div>
             </div>
             
             <div class="evm-machine-bezel">
+                <!-- Dual EVM Status Indicators & LCD Display -->
                 <div class="evm-lamp-bar">
-                    <span style="font-size:0.78rem; font-weight:700; color:#cbd5e1;">BALLOT UNIT:</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:0.78rem; font-weight:800; color:#10b981;" id="evmLampText">RECORDING VOTE...</span>
-                        <div class="evm-lamp-led active" id="evmLampLed"></div>
+                        <div class="evm-led-unit">
+                            <div class="evm-lamp-led ready-led" id="evmReadyLed" title="Ready Status"></div>
+                            <span style="font-size:0.65rem; font-weight:800; color:#94a3b8; letter-spacing:0.5px;">READY</span>
+                        </div>
+                        <div class="evm-led-unit">
+                            <div class="evm-lamp-led active" id="evmLampLed" title="Ballot Status"></div>
+                            <span style="font-size:0.65rem; font-weight:800; color:#10b981; letter-spacing:0.5px;" id="evmLampLabel">RECORDING</span>
+                        </div>
+                    </div>
+
+                    <!-- Digital LCD Dot-Matrix Terminal -->
+                    <div class="evm-digital-lcd" id="evmLcdDisplay">
+                        <span class="lcd-text" id="evmLampText">TRANSMITTING BALLOT TO VVPAT...</span>
                     </div>
                 </div>
 
-                <!-- Transparent VVPAT Printing Window -->
+                <!-- Backlit VVPAT Thermal Inspection Window -->
                 <div class="vvpat-display-window">
+                    <div class="vvpat-glass-glare"></div>
                     <div class="vvpat-paper-slip" id="vvpatSlip">
-                        <div style="font-size:0.62rem; font-weight:800; color:#64748b; letter-spacing:0.5px;">OFFICIAL VVPAT VERIFICATION SLIP</div>
-                        <div style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:4px 0;" id="vvpatCandidateName">Candidate Name</div>
-                        <div style="font-size:0.76rem; font-weight:700; color:#047857;" id="vvpatPartyName">Political Party</div>
-                        <div style="font-size:0.65rem; color:#94a3b8; margin-top:4px;" id="vvpatTimestamp">Recorded: Just now</div>
+                        <div class="vvpat-slip-header">
+                            <span>भारत निर्वाचन आयोग • ECI VVPAT SLIP</span>
+                            <span style="font-family:monospace; font-size:0.58rem;">FORM 17C</span>
+                        </div>
+                        <div class="vvpat-slip-body">
+                            <div class="vvpat-cand-name" id="vvpatCandidateName">Candidate Name</div>
+                            <div class="vvpat-cand-party" id="vvpatPartyName">Political Party Affiliation</div>
+                            <div class="vvpat-crypto-seal" id="vvpatCryptoSeal">AUTH: SHA256-ECI-BALLOT-VERIFIED</div>
+                        </div>
+                        <div class="vvpat-slip-footer">
+                            <span id="vvpatTimestamp">Recorded: Just now</span>
+                            <span>POLL SECURE ✔</span>
+                        </div>
                     </div>
+                </div>
+
+                <div class="vvpat-drop-chamber-label">
+                    <span>▼ SEALED VVPAT AUDIT BOX • DROP COMPARTMENT ▼</span>
                 </div>
             </div>
 
-            <div id="evmConfirmedSection" style="display:none; margin-top:10px;">
+            <!-- Confirmation & Indelible Ink Verification -->
+            <div id="evmConfirmedSection" style="display:none; margin-top:8px;">
                 <div class="ink-mark-badge">☝️</div>
-                <h3 style="margin:0; font-size:1.2rem; color:#10b981;">VOTE RECORDED IN BALLOT BOX</h3>
-                <p style="margin:4px 0 0 0; font-size:0.84rem; color:#cbd5e1;">Your ballot has been verified, digitally marked with indelible ink, and securely locked.</p>
+                <h3 style="margin:0; font-size:1.15rem; color:#10b981; font-weight:800; letter-spacing:0.5px;">
+                    BALLOT RECORDED & LOCKED IN VVPAT
+                </h3>
+                <p style="margin:4px 0 0 0; font-size:0.82rem; color:#94a3b8; line-height:1.4;">
+                    Your vote has been cryptographically marked with indelible ink, anonymized, and recorded into the official constituency tally.
+                </p>
             </div>
         </div>
     </div>

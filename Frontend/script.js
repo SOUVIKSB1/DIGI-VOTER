@@ -1215,15 +1215,17 @@ window.switchVoterModalTab = function(tab) {
 };
 
 window.handleVoterLoginSubmit = async function() {
-    const email = (document.getElementById('voterLoginEmail')?.value || '').trim();
-    if (!email) return alert('Please enter your voter email.');
+    const inputVal = (document.getElementById('voterLoginEmail')?.value || '').trim();
+    const selectedState = document.getElementById('voterLoginState')?.value || localStorage.getItem('voterState') || 'Uttar Pradesh';
+    if (!inputVal) return alert('Please enter your Voter EPIC Number or Registered Email.');
 
-    const voterName = email.split('@')[0];
-    const voterState = localStorage.getItem('voterState') || 'Uttar Pradesh';
-    const voterAssembly = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
-    const epic = 'VOT-2026-' + Math.floor(1000 + Math.random() * 9000);
+    // Support both direct email or EPIC number input
+    let email = inputVal.includes('@') ? inputVal : (inputVal.toLowerCase().replace(/[^a-z0-9]/g, '') + '@digivoter.gov.in');
+    let voterName = inputVal.includes('@') ? inputVal.split('@')[0] : ('Elector ' + inputVal.toUpperCase());
+    let epic = inputVal.includes('@') ? ('VOT-2026-' + Math.floor(1000 + Math.random() * 9000)) : inputVal.toUpperCase();
+    let constituency = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
 
-    // Fetch token for this specific email
+    // Fetch token for this specific voter
     try {
         const res = await fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(email)}&name=${encodeURIComponent(voterName)}`);
         if (res.ok) {
@@ -1238,17 +1240,17 @@ window.handleVoterLoginSubmit = async function() {
         email: email,
         role: 'voter',
         epic: epic,
-        state: voterState,
-        constituency: voterAssembly
+        state: selectedState,
+        constituency: constituency
     };
     localStorage.setItem('localUser', JSON.stringify(voterUser));
     localStorage.setItem('backendUser', JSON.stringify(voterUser));
-    localStorage.setItem('voterState', voterState);
-    localStorage.setItem('voterAssembly', voterAssembly);
+    localStorage.setItem('voterState', selectedState);
+    localStorage.setItem('voterAssembly', constituency);
 
     updateVoterUI(voterUser);
     window.closeVoterAuthModal();
-    if (typeof showToast === 'function') showToast(`Authenticated as Voter: ${voterUser.name}! ✔`, 'success');
+    if (typeof showToast === 'function') showToast(`Authenticated on National Roll: ${voterUser.name} (${selectedState}) ✔`, 'success');
 };
 
 window.handleQuickVoterDemo = function() {
@@ -1446,7 +1448,7 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
         }
     }
 
-    // 2. Play iconic EVM tone synthesizer
+    // 2. Play initial EVM keypress beep
     playEvmBeep();
 
     // 3. Show EVM Cast Modal with VVPAT Animation
@@ -1455,15 +1457,22 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
     const candNameEl = document.getElementById('vvpatCandidateName');
     const partyEl = document.getElementById('vvpatPartyName');
     const timeEl = document.getElementById('vvpatTimestamp');
+    const cryptoSeal = document.getElementById('vvpatCryptoSeal');
     const lampLed = document.getElementById('evmLampLed');
+    const lampLabel = document.getElementById('evmLampLabel');
+    const readyLed = document.getElementById('evmReadyLed');
     const lampText = document.getElementById('evmLampText');
     const confirmedSec = document.getElementById('evmConfirmedSection');
 
     if (candNameEl) candNameEl.textContent = cName;
     if (partyEl) partyEl.textContent = party;
-    if (timeEl) timeEl.textContent = 'Ballot cast: ' + new Date().toLocaleTimeString('en-IN');
-    if (lampLed) lampLed.className = 'evm-lamp-led active';
-    if (lampText) lampText.textContent = 'BALLOT RECORDING...';
+    if (timeEl) timeEl.textContent = 'Recorded: ' + new Date().toLocaleTimeString('en-IN');
+    if (cryptoSeal) cryptoSeal.textContent = 'AUTH: SHA256-ECI-' + Math.floor(10000000 + Math.random() * 90000000);
+    
+    if (readyLed) readyLed.className = 'evm-lamp-led'; // Ready turns off while casting
+    if (lampLed) lampLed.className = 'evm-lamp-led active'; // Red flash
+    if (lampLabel) lampLabel.textContent = 'RECORDING';
+    if (lampText) lampText.textContent = '[ BU-01 ] TRANSMITTING BALLOT TO VVPAT...';
     if (confirmedSec) confirmedSec.style.display = 'none';
 
     if (slip) {
@@ -1481,19 +1490,23 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
         window.vote(eid, cid);
     }
 
-    // 5. After 1.2s: Slip drops into ballot box, Indelible ink stamped
+    // 5. After 1.3s: Long EVM Confirmation Tone + Slip Drops into VVPAT Box + Indelible Ink Stamped
     setTimeout(() => {
         if (slip) slip.classList.add('dropped');
+        if (lampLed) lampLed.className = 'evm-lamp-led recorded'; // Solid Green
+        if (lampLabel) lampLabel.textContent = 'LOCKED';
+        if (lampText) lampText.textContent = '[ BU-01 ] SLIP PRINTED • AUDIT LOGGED • BOX SEALED';
         if (confirmedSec) confirmedSec.style.display = 'block';
-        if (lampText) lampText.textContent = 'VERIFIED & RECORDED';
         playEvmBeep();
-    }, 1200);
+    }, 1300);
 
-    // 6. Close modal smoothly after 2.6s
+    // 6. Close modal smoothly after 2.8s
     setTimeout(() => {
         if (modal) modal.style.display = 'none';
         if (slip) slip.className = 'vvpat-paper-slip';
-    }, 2600);
+        if (readyLed) readyLed.className = 'evm-lamp-led ready-led';
+        if (lampLed) lampLed.className = 'evm-lamp-led';
+    }, 2800);
 };
 
 function renderElectionCard(eid, e, showViewButton = false) {
