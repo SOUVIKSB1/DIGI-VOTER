@@ -1267,6 +1267,14 @@ window.handleVoterRegisterSubmit = function() {
     localStorage.setItem('voterState', state);
     localStorage.setItem('voterAssembly', constituency);
 
+    // Fetch official authenticated session for this voter
+    fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`)
+        .then(r => r.json())
+        .then(d => {
+            if (d && d.token) localStorage.setItem('backendToken', d.token);
+        })
+        .catch(() => {});
+
     updateVoterUI(newVoter);
     window.closeVoterAuthModal();
     if (typeof showToast === 'function') showToast(`Voter registered in ${state} (${constituency}): ${name}!`, 'success');
@@ -1353,6 +1361,13 @@ window.selectVoterProfile = function(name, email, constituency, epic, state = 'U
     localStorage.setItem('backendToken', 'mock-voter-token-' + email.split('@')[0]);
     localStorage.setItem('voterAssembly', constituency);
     localStorage.setItem('voterState', state);
+
+    fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`)
+        .then(r => r.json())
+        .then(d => {
+            if (d && d.token) localStorage.setItem('backendToken', d.token);
+        })
+        .catch(() => {});
 
     updateVoterUI(voterUser);
     window.closeVoterAuthModal();
@@ -1949,10 +1964,11 @@ window.vote = async function vote(electionId, candidateId) {
 // Vote against backend API
 window.voteBackend = async function voteBackend(electionId, candidateId) {
     try {
+        const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
         let backendToken = localStorage.getItem('backendToken');
-        if (!backendToken) {
+        if (!backendToken || backendToken.startsWith('mock-')) {
             try {
-                const tokRes = await fetch(`${API_BASE}/auth/token?role=voter`);
+                const tokRes = await fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(localUser.email)}&name=${encodeURIComponent(localUser.name)}`);
                 if (tokRes.ok) {
                     const tokData = await tokRes.json();
                     backendToken = tokData.token;
@@ -1963,12 +1979,18 @@ window.voteBackend = async function voteBackend(electionId, candidateId) {
 
         const headers = { 
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (backendToken || 'voter-token-2026')
+            'Authorization': 'Bearer ' + (backendToken || 'voter-token-2026'),
+            'x-voter-email': localUser.email,
+            'x-voter-name': localUser.name
         };
         const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/vote`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ candidateId })
+            body: JSON.stringify({ 
+                candidateId, 
+                voterEmail: localUser.email, 
+                voterName: localUser.name 
+            })
         });
         const data = await res.json();
         if (res.ok) {

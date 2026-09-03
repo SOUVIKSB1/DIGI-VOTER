@@ -1,52 +1,109 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  
-  // If authorization header is missing, check if in test mode or provide default test session
+  const voterEmailHeader = (req.headers['x-voter-email'] || req.body?.voterEmail || '').trim().toLowerCase();
+  const voterNameHeader = (req.headers['x-voter-name'] || req.body?.voterName || '').trim();
+
+  // If a specific voter email is passed from client, resolve or create their unique User document
+  if (voterEmailHeader) {
+    try {
+      let voterUser = await User.findOne({ email: voterEmailHeader });
+      if (!voterUser) {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash('Voter@123', salt);
+        voterUser = await User.create({
+          name: voterNameHeader || voterEmailHeader.split('@')[0],
+          email: voterEmailHeader,
+          password: hash,
+          role: 'voter'
+        });
+      }
+      req.user = voterUser;
+      return next();
+    } catch (e) {
+      console.warn('Could not upsert voter by email header', e.message);
+    }
+  }
+
+  // If authorization header is missing, check role header or grant role session
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    req.user = {
-      _id: '64b0f0000000000000000001',
-      id: '64b0f0000000000000000001',
-      role: 'admin',
-      name: 'Chief Election Admin',
-      email: 'souvik@admin.com'
-    };
+    const role = req.headers['x-role'] === 'admin' ? 'admin' : 'voter';
+    if (role === 'admin') {
+      req.user = {
+        _id: '64b0f0000000000000000001',
+        id: '64b0f0000000000000000001',
+        role: 'admin',
+        name: 'Chief Election Admin',
+        email: 'souvik@admin.com'
+      };
+      return next();
+    }
+    const defaultEmail = voterEmailHeader || 'newvoter@digivoter.in';
+    let defUser = await User.findOne({ email: defaultEmail });
+    if (!defUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('Voter@123', salt);
+      defUser = await User.create({ name: 'Registered Voter', email: defaultEmail, password: hash, role: 'voter' });
+    }
+    req.user = defUser;
     return next();
   }
 
   const token = authHeader.split(' ')[1];
 
-  // Support test mode / mock tokens when login barrier is removed
+  // Support test mode / mock tokens
   if (token && token.startsWith('mock-')) {
     const isAdmin = token.includes('admin');
-    req.user = {
-      _id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
-      id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
-      role: isAdmin ? 'admin' : 'voter',
-      name: isAdmin ? 'Chief Election Admin' : 'Souvik (Voter)',
-      email: isAdmin ? 'souvik@admin.com' : 'voter@digivoter.gov.in'
-    };
-    return next();
+    if (isAdmin) {
+      req.user = {
+        _id: '64b0f0000000000000000001',
+        id: '64b0f0000000000000000001',
+        role: 'admin',
+        name: 'Chief Election Admin',
+        email: 'souvik@admin.com'
+      };
+      return next();
+    } else {
+      const email = voterEmailHeader || ('voter-' + token.replace(/^mock-voter-(token-)?/, '') + '@digivoter.in');
+      let vUser = await User.findOne({ email });
+      if (!vUser) {
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash('Voter@123', salt);
+        vUser = await User.create({
+          name: voterNameHeader || 'Registered Voter',
+          email,
+          password: hash,
+          role: 'voter'
+        });
+      }
+      req.user = vUser;
+      return next();
+    }
   }
 
   try {
     const secret = process.env.JWT_SECRET || 'secret-jwt-key';
     const decoded = jwt.verify(token, secret);
     let user = null;
-    try {
-      user = await User.findById(decoded.id).select('-password');
-    } catch (dbErr) {
-      // DB offline or connection pending
+    if (decoded.id) {
+      try {
+        user = await User.findById(decoded.id).select('-password');
+      } catch (dbErr) { }
+    }
+    if (!user && decoded.email) {
+      try {
+        user = await User.findOne({ email: decoded.email }).select('-password');
+      } catch (dbErr) { }
     }
 
     if (!user) {
-      // Decode successfully verified -> construct session from token
       req.user = {
-        _id: decoded.id || '64b0f0000000000000000001',
-        id: decoded.id || '64b0f0000000000000000001',
-        role: decoded.role || 'admin',
+        _id: decoded.id || new (require('mongoose').Types.ObjectId)(),
+        id: decoded.id || new (require('mongoose').Types.ObjectId)(),
+        role: decoded.role || 'voter',
         name: decoded.name || 'Test User',
         email: decoded.email || 'user@digivoter.in'
       };
@@ -55,15 +112,25 @@ const authMiddleware = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    // If token expired or signature failed, grant test session instead of throwing error
     const isAdmin = token.includes('admin') || req.headers['x-role'] === 'admin';
-    req.user = {
-      _id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
-      id: isAdmin ? '64b0f0000000000000000001' : '64b0f0000000000000000002',
-      role: isAdmin ? 'admin' : 'voter',
-      name: isAdmin ? 'Chief Election Admin' : 'Souvik (Voter)',
-      email: isAdmin ? 'souvik@admin.com' : 'voter@digivoter.gov.in'
-    };
+    if (isAdmin) {
+      req.user = {
+        _id: '64b0f0000000000000000001',
+        id: '64b0f0000000000000000001',
+        role: 'admin',
+        name: 'Chief Election Admin',
+        email: 'souvik@admin.com'
+      };
+      return next();
+    }
+    const email = voterEmailHeader || ('voter-' + Date.now() + '@digivoter.in');
+    let vUser = await User.findOne({ email });
+    if (!vUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('Voter@123', salt);
+      vUser = await User.create({ name: 'Registered Voter', email, password: hash, role: 'voter' });
+    }
+    req.user = vUser;
     return next();
   }
 };
