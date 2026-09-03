@@ -1737,8 +1737,10 @@ function renderElectionCard(eid, e, showViewButton = false) {
     let html = `
         <div class="election-card-header">
             <div>
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
                     <span style="font-size:0.75rem; background:rgba(4,106,56,0.1); color:#046a38; border:1px solid rgba(4,106,56,0.25); border-radius:6px; padding:2px 8px; font-weight:700;">🏛️ ${assemblyName}</span>
+                    <button class="share-action-pill wapp" onclick="event.stopPropagation(); sharePollToWhatsApp('${eid}', '${encodeURIComponent(title)}', '${encodeURIComponent(assemblyName)}')" title="Share poll directly on WhatsApp">💬 WhatsApp</button>
+                    <button class="share-action-pill link" onclick="event.stopPropagation(); shareDirectPoll('${eid}', '${encodeURIComponent(title)}', '${encodeURIComponent(assemblyName)}')" title="Copy direct vote link or share">🔗 Share Poll</button>
                 </div>
                 <h3>${title}</h3>
                 <p class="muted" style="font-size:0.85rem; margin-top:3px;">${description}</p>
@@ -2900,6 +2902,89 @@ window.deleteElectionById = async function deleteElectionById() {
     if (window.loadElections) window.loadElections();
 };
 
+// --- DIRECT POLL SHARING & DEEP LINKING ---
+window.getDirectPollUrl = function(electionId) {
+    const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+    const path = window.location.pathname.replace(/\/index\.html$/, '') || '/';
+    return `${origin}${path}${path.endsWith('/') ? '' : '/'}?poll=${encodeURIComponent(electionId)}`;
+};
+
+window.sharePollToWhatsApp = function(eid, titleEnc, assemblyEnc) {
+    const title = decodeURIComponent(titleEnc);
+    const assembly = decodeURIComponent(assemblyEnc);
+    const shareUrl = window.getDirectPollUrl(eid);
+
+    const text = `🗳️ *DigiVoter National Election Roll*\n\n👉 *Vote in Official Poll:* "${title}"\n🏛️ *Constituency:* ${assembly}\n\n🔒 Click here to cast your confidential EVM ballot directly:\n${shareUrl}`;
+    const wappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(wappUrl, '_blank');
+
+    if (typeof showToast === 'function') {
+        showToast('Opening WhatsApp with direct ballot link... 💬', 'success');
+    }
+};
+
+window.shareDirectPoll = function(eid, titleEnc, assemblyEnc) {
+    const title = decodeURIComponent(titleEnc);
+    const assembly = decodeURIComponent(assemblyEnc);
+    const shareUrl = window.getDirectPollUrl(eid);
+
+    if (navigator.share) {
+        navigator.share({
+            title: `${title} - DigiVoter Official Ballot`,
+            text: `🗳️ Cast your confidential vote in "${title}" (${assembly}) on DigiVoter!`,
+            url: shareUrl
+        }).catch(() => {
+            window.copyPollLinkToClipboard(shareUrl);
+        });
+    } else {
+        window.copyPollLinkToClipboard(shareUrl);
+    }
+};
+
+window.copyPollLinkToClipboard = function(url) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            if (typeof showToast === 'function') {
+                showToast('Direct poll link copied to clipboard! Share on WhatsApp or any platform. 📋', 'success');
+            } else {
+                alert('Poll link copied to clipboard: ' + url);
+            }
+        }).catch(() => {
+            prompt('Copy this direct voting poll link:', url);
+        });
+    } else {
+        prompt('Copy this direct voting poll link:', url);
+    }
+};
+
+// Handle Incoming Deep Link (?poll=... or ?election=...)
+window.checkDirectPollDeepLink = function() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pollId = urlParams.get('poll') || urlParams.get('election') || urlParams.get('vote');
+        if (!pollId) return;
+
+        // If in admin mode, switch to voter mode so ballot is ready to cast
+        const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
+        if (activeRole !== 'voter' && window.switchTestRole) {
+            window.switchTestRole('voter');
+        }
+
+        setTimeout(() => {
+            const cardEl = document.getElementById('candidates-' + pollId)?.closest('.election-card');
+            if (cardEl) {
+                cardEl.classList.add('poll-spotlight');
+                cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof showToast === 'function') {
+                    showToast('🎯 Direct Poll Linked! Cast your ballot below.', 'info');
+                }
+            }
+        }, 600);
+    } catch(e) {
+        console.warn('Deep link poll handler error', e);
+    }
+};
+
 // Initial First-Time Auth Bootstrap
 function checkInitialAuth() {
     const savedVoterRaw = localStorage.getItem('authenticatedVoterUser');
@@ -2918,6 +3003,9 @@ function checkInitialAuth() {
             } catch(e) {}
         }
     }
+    
+    // Check for deep link on startup
+    window.checkDirectPollDeepLink();
 }
 
 setTimeout(checkInitialAuth, 250);
