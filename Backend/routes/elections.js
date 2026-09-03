@@ -15,8 +15,10 @@ router.get('/:electionId/results', electionCtrl.getResults);
 
 // --- Admin-only routes ---
 router.post('/', auth, role('admin'), electionCtrl.createElection);
-// **FIX:** This route uses ':electionId'
+// Candidate management routes
 router.post('/:electionId/candidates', auth, role('admin'), electionCtrl.addCandidate); 
+router.put('/:electionId/candidates/:candidateId', auth, role('admin'), electionCtrl.editCandidate);
+router.delete('/:electionId/candidates/:candidateId', auth, role('admin'), electionCtrl.deleteCandidate);
 router.put('/:electionId', auth, role('admin'), electionCtrl.updateElection);
 router.delete('/:electionId', auth, role('admin'), electionCtrl.deleteElection);
 

@@ -161,6 +161,42 @@ exports.addCandidate = async (req, res) => {
     }
 };
 
+// PUT /api/elections/:electionId/candidates/:candidateId
+exports.editCandidate = async (req, res) => {
+    const { name, party } = req.body;
+    const { candidateId } = req.params;
+    try {
+        const candidate = await Candidate.findByIdAndUpdate(
+            candidateId,
+            { name, party },
+            { new: true }
+        );
+        if (!candidate) {
+            return res.status(404).json({ message: "Candidate not found." });
+        }
+        res.json(candidate);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// DELETE /api/elections/:electionId/candidates/:candidateId
+exports.deleteCandidate = async (req, res) => {
+    const { candidateId } = req.params;
+    try {
+        const candidate = await Candidate.findByIdAndDelete(candidateId);
+        if (!candidate) {
+            return res.status(404).json({ message: "Candidate not found." });
+        }
+        await Vote.deleteMany({ candidate: candidateId });
+        res.json({ message: 'Candidate and associated votes removed successfully.' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 // PUT /api/elections/:electionId
 exports.updateElection = async (req, res) => {
     try {

@@ -758,6 +758,49 @@
         </div>
     </div>
 
+    <!-- Edit Nominated Candidate Modal -->
+    <div id="editCandidateModal" class="voter-modal-overlay" style="display:none;" onclick="if(event.target===this) closeEditCandidateModal()">
+        <div class="voter-modal-box" style="max-width:480px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #e2e8f0; background:rgba(255,255,255,0.98);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(30,64,175,0.1); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">✏️</div>
+                    <div>
+                        <h3 style="margin:0; font-size:1.05rem; color:#0f172a;">Edit Nominated Candidate</h3>
+                        <p style="margin:2px 0 0 0; font-size:0.78rem; color:#64748b;" id="editCandidateSubTitle">Modify candidate details & party</p>
+                    </div>
+                </div>
+                <button onclick="closeEditCandidateModal()" style="border:none; background:transparent; font-size:1.6rem; cursor:pointer; color:#64748b; line-height:1;">✕</button>
+            </div>
+            <div class="modal-body" style="padding:1.4rem;">
+                <input type="hidden" id="editCandElectionId" />
+                <input type="hidden" id="editCandId" />
+                
+                <div class="modal-form-group">
+                    <label>Candidate Full Legal Name</label>
+                    <input type="text" id="editCandName" placeholder="Candidate Name" style="width:100%; padding:10px 12px; border-radius:8px; border:1.5px solid #cbd5e1;" required />
+                </div>
+                <div class="modal-form-group">
+                    <label>Political Party Affiliation</label>
+                    <input type="text" id="editCandParty" placeholder="Political Party" style="width:100%; padding:10px 12px; border-radius:8px; border:1.5px solid #cbd5e1;" />
+                </div>
+                <div style="margin:6px 0 16px 0;">
+                    <span style="font-size:0.75rem; color:#64748b; font-weight:600; display:block; margin-bottom:6px;">⚡ Quick Select Party:</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='Bharatiya Janata Party (BJP)'">BJP</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='Indian National Congress (INC)'">INC</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='Aam Aadmi Party (AAP)'">AAP</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='All India Trinamool Congress (AITC)'">AITC (TMC)</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='Samajwadi Party (SP)'">SP</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;" onclick="document.getElementById('editCandParty').value='Independent'">Independent</button>
+                    </div>
+                </div>
+                <button class="btn btn-primary full-width" style="background:#1e40af; padding:12px; font-weight:700;" onclick="submitEditCandidate()">
+                    💾 Save Candidate Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="ovms-toast-container"></div>
 

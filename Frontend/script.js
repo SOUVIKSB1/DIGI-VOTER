@@ -1072,6 +1072,11 @@ function renderFilteredElections(electionList) {
     let displayed = electionList;
     if (isVoter) {
         displayed = electionList.filter(e => {
+            // Ballots marked 'visibleToAll' or 'All States' are always visible to every voter nationwide
+            if (e.visibleToAll || e.state === 'All States' || e.state === 'All India' || e.assembly === 'All Assemblies' || !e.state) {
+                return true;
+            }
+
             const eState = (e.state || '').toLowerCase();
             const vState = (voterState || '').toLowerCase();
             const eAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1582,9 +1587,11 @@ function renderElectionCard(eid, e, showViewButton = false) {
         const isAdmin = !!(isBackendAdmin || isOwnerEmail || (localStorage.getItem('ovmsActiveRole') === 'admin'));
 
         if (isAdmin) {
+            const isVisAll = !!(e.visibleToAll || e.state === 'All States' || e.assembly === 'All Assemblies');
             html += `<div class="election-id-admin"><strong>ELECTION ID:</strong> ${eid}</div>`;
             html += `<div class="admin-controls">
                         <button class="btn btn-outline btn-sm" style="color:#047857; border-color:#86efac; font-weight:700; background:#f0fdf4;" onclick="event.stopPropagation(); openQuickAddCandidateModal('${eid}', '${encodeURIComponent(title)}')">➕ Add Candidate</button>
+                        <button class="btn btn-outline btn-sm" style="${isVisAll ? 'color:#15803d; border-color:#86efac; background:#dcfce7; font-weight:700;' : 'color:#1e40af; border-color:#93c5fd; background:#eff6ff; font-weight:600;'}" onclick="event.stopPropagation(); toggleVisibleToAll('${eid}')">🌐 ${isVisAll ? 'Visible to ALL Voters ✔' : '👁️ Make Visible to All'}</button>
                         <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">Edit</button>
                         <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
                         <button class="btn btn-outline btn-sm" onclick="viewElectionResultsModal('${eid}')">📊 Tally Results</button>
@@ -1621,7 +1628,12 @@ function renderElectionCard(eid, e, showViewButton = false) {
             let lampClass = 'evm-lamp';
 
             if (isAdminRole) {
-                actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled title="Administrators cannot cast ballots">Admin</button>`;
+                actionButtonHtml = `
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button class="btn btn-outline btn-sm" style="padding:4px 8px; font-size:0.75rem; color:#1e40af; border-color:#93c5fd; background:#eff6ff; font-weight:700;" onclick="event.stopPropagation(); openEditCandidateModal('${eid}', '${cid}', '${encodeURIComponent(c.name)}', '${encodeURIComponent(party)}')">✏️ Edit</button>
+                        <button class="btn btn-danger btn-sm" style="padding:4px 8px; font-size:0.75rem;" onclick="event.stopPropagation(); deleteCandidate('${eid}', '${cid}', '${encodeURIComponent(c.name)}')">🗑️ Delete</button>
+                    </div>
+                `;
             } else if (isUpcoming) {
                 actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled style="opacity:0.6; cursor:not-allowed;" title="Polls open on ${new Date(e.startDate).toLocaleDateString()}">Opens Soon ⏳</button>`;
             } else if (isClosed) {
@@ -1738,6 +1750,135 @@ window.setPartyValue = function(partyName) {
     const p2 = document.getElementById('modalCParty');
     if (p1) p1.value = partyName;
     if (p2) p2.value = partyName;
+};
+
+// ==========================================
+// ADMIN VISIBILITY & CANDIDATE MANAGEMENT
+// ==========================================
+window.toggleVisibleToAll = async function(electionId) {
+    const list = getLocalElections();
+    const el = list.find(x => x.id === electionId || x._id === electionId);
+    const newStatus = !(el && (el.visibleToAll || el.state === 'All States' || el.assembly === 'All Assemblies'));
+
+    const token = localStorage.getItem('backendToken') || 'mock-admin-token-2026';
+    try {
+        await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ 
+                visibleToAll: newStatus,
+                state: newStatus ? 'All States' : (el ? (el.state || 'Uttar Pradesh') : 'Uttar Pradesh')
+            })
+        });
+    } catch(e) {}
+
+    // Update local cache
+    if (el) {
+        el.visibleToAll = newStatus;
+        if (newStatus) el.state = 'All States';
+        saveLocalElections(list);
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(newStatus ? '🌐 Election is now VISIBLE TO ALL VOTERS nationwide! ✔' : '🔒 Election visibility restricted to assigned state.', 'success');
+    }
+    if (window.loadElections) window.loadElections();
+};
+
+window.openEditCandidateModal = function(electionId, candidateId, nameEnc, partyEnc) {
+    const modal = document.getElementById('editCandidateModal');
+    const name = nameEnc ? decodeURIComponent(nameEnc) : '';
+    const party = partyEnc ? decodeURIComponent(partyEnc) : '';
+
+    if (document.getElementById('editCandElectionId')) document.getElementById('editCandElectionId').value = electionId;
+    if (document.getElementById('editCandId')) document.getElementById('editCandId').value = candidateId;
+    if (document.getElementById('editCandName')) document.getElementById('editCandName').value = name;
+    if (document.getElementById('editCandParty')) document.getElementById('editCandParty').value = party;
+    if (document.getElementById('editCandidateSubTitle')) {
+        document.getElementById('editCandidateSubTitle').textContent = `Editing Candidate: ${name}`;
+    }
+
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeEditCandidateModal = function() {
+    const modal = document.getElementById('editCandidateModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.submitEditCandidate = async function() {
+    const electionId = document.getElementById('editCandElectionId')?.value;
+    const candidateId = document.getElementById('editCandId')?.value;
+    const name = (document.getElementById('editCandName')?.value || '').trim();
+    const party = (document.getElementById('editCandParty')?.value || '').trim() || 'Independent';
+
+    if (!name) return alert('Please enter candidate name.');
+
+    const token = localStorage.getItem('backendToken') || 'mock-admin-token-2026';
+    try {
+        const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/candidates/${encodeURIComponent(candidateId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ name, party })
+        });
+        if (res.ok) {
+            if (typeof showToast === 'function') showToast(`Candidate ${name} updated successfully! ✔`, 'success');
+            window.closeEditCandidateModal();
+            if (window.loadElections) window.loadElections();
+            return;
+        }
+    } catch(e) {
+        console.warn('Edit candidate fallback to local', e);
+    }
+
+    // Local cache fallback
+    const list = getLocalElections();
+    const el = list.find(x => x.id === electionId || x._id === electionId);
+    if (el && el.candidates) {
+        const cand = el.candidates.find(c => (c.id || c._id) === candidateId);
+        if (cand) {
+            cand.name = name;
+            cand.party = party;
+            saveLocalElections(list);
+        }
+    }
+
+    if (typeof showToast === 'function') showToast(`Candidate ${name} updated successfully! ✔`, 'success');
+    window.closeEditCandidateModal();
+    if (window.loadElections) window.loadElections();
+};
+
+window.deleteCandidate = async function(electionId, candidateId, nameEnc) {
+    const name = nameEnc ? decodeURIComponent(nameEnc) : 'this candidate';
+    if (!confirm(`Are you sure you want to permanently delete candidate "${name}" from this election?`)) {
+        return;
+    }
+
+    const token = localStorage.getItem('backendToken') || 'mock-admin-token-2026';
+    try {
+        const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/candidates/${encodeURIComponent(candidateId)}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            if (typeof showToast === 'function') showToast(`Candidate "${name}" removed from ballot! ✔`, 'success');
+            if (window.loadElections) window.loadElections();
+            return;
+        }
+    } catch(e) {
+        console.warn('Delete candidate fallback to local', e);
+    }
+
+    // Local cache fallback
+    const list = getLocalElections();
+    const el = list.find(x => x.id === electionId || x._id === electionId);
+    if (el && el.candidates) {
+        el.candidates = el.candidates.filter(c => (c.id || c._id) !== candidateId);
+        saveLocalElections(list);
+    }
+
+    if (typeof showToast === 'function') showToast(`Candidate "${name}" removed from ballot! ✔`, 'success');
+    if (window.loadElections) window.loadElections();
 };
 
 // 1-Click Lok Sabha & Vidhan Sabha Ballot Seeder
