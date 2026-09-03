@@ -427,13 +427,12 @@ async function ensureFirestoreNetwork() {
     }
 }
 // backend API base
-// Smart detection: uses localhost in dev, Cloud Run in production
+// Smart detection: uses localhost in dev, same origin in production
 const API_BASE = (function() {
-    // Use localhost for local development, otherwise use Render URL
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5002/api';
     }
-    return 'https://ovms-yz85.onrender.com/api';
+    return window.location.origin + '/api';
 })();
 
 const firebaseConfig = {
@@ -476,24 +475,20 @@ window.addEventListener('offline', updateNetworkStatus);
 
 updateNetworkStatus();
 
-// try to load Firebase SDKs dynamically when online
+// try to load Firebase SDKs dynamically when online (deferred non-blocking)
 async function tryInitFirebase() {
     if (!navigator.onLine) return;
     if (firebaseAvailable) return;
     try {
         const appModule = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
-        // analytics optional
-        try { await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js'); } catch (e) { /* ignore */ }
+        try { await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js'); } catch (e) { }
         authModule = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
         firestoreModule = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
 
         app = appModule.initializeApp(firebaseConfig);
-        try { auth = authModule.getAuth(app); } catch (e) { console.warn('auth init failed', e); }
-        try { db = firestoreModule.getFirestore(app); } catch (e) { console.warn('firestore init failed', e); }
+        try { auth = authModule.getAuth(app); } catch (e) { }
+        try { db = firestoreModule.getFirestore(app); } catch (e) { }
 
-        // wire auth state change
-        // wire auth state change (ONLY FOR INDEX.HTML)
-        // We check if authSection exists, otherwise this breaks admin.html
         if (auth && authModule.onAuthStateChanged && document.getElementById('auth-section')) {
             authModule.onAuthStateChanged(auth, async (user) => {
                 if (user) {
@@ -505,32 +500,25 @@ async function tryInitFirebase() {
         }
 
         firebaseAvailable = true;
-        // mirror to window so other pages/scripts can reference
         window.firebaseAvailable = true;
         window.authModule = authModule;
         window.firestoreModule = firestoreModule;
         window.auth = auth;
         window.db = db;
-        console.info('Firebase initialized');
-        // listen to ID token changes so we can re-exchange with backend when refreshed
-        // listen to ID token changes (ONLY FOR INDEX.HTML)
-        if (auth && authModule && authModule.onIdTokenChanged && document.getElementById('auth-section')) { // <-- SOLUTION
-            authModule.onIdTokenChanged(auth, async (user) => {
-                if (user) {
-                    // attempt to exchange token with backend so backendToken stays current
-                    tryExchangeFirebaseToken(user);
-                }
-            });
-        }
     } catch (err) {
         firebaseAvailable = false;
-        console.warn('Could not initialize Firebase (offline or blocked):', err);
         window.firebaseAvailable = false;
     }
 }
 
-// initial attempt
-tryInitFirebase();
+// Deferred non-blocking init so UI renders instantly in 0ms
+setTimeout(() => {
+    if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => tryInitFirebase());
+    } else {
+        setTimeout(tryInitFirebase, 1500);
+    }
+}, 1000);
 
 // ---------- UI helpers ----------
 function updateNavbarAuth(user, isAdmin) {
@@ -1026,27 +1014,79 @@ function updateBackendStatus(ok = undefined, errMsg = null) {
     if (statusPill) statusPill.title = 'Network: Connected | Secure Balloting Protocol Active';
 }
 
-// ---------- Elections and voting ----------
-window.loadElections = async function loadElections() {
+function renderFilteredElections(electionList) {
     const electionsDiv = getElectionsDiv();
-    if (electionsDiv) electionsDiv.innerHTML = '<p class="muted" style="padding:15px 0;">Loading official ballots...</p>';
-    
+    if (!electionsDiv) return;
+
+    const isAdminPage = adminSection && adminSection.style.display === 'block';
+    const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
+    const isVoter = activeRole === 'voter' && !isAdminPage;
+    let voterAssembly = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
+
+    const displayEl = document.getElementById('currentAssemblyDisplay');
+    if (displayEl) displayEl.textContent = voterAssembly === 'all' ? 'All Constituencies' : voterAssembly;
+
+    const selectEl = document.getElementById('voterAssemblySelect');
+    if (selectEl && selectEl.value !== voterAssembly) selectEl.value = voterAssembly;
+
+    let displayed = electionList;
+    if (isVoter && voterAssembly && voterAssembly !== 'all') {
+        const cleanTarget = voterAssembly.toLowerCase().replace(/[^a-z0-9]/g, '');
+        displayed = electionList.filter(e => {
+            const cleanAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return cleanAss.includes(cleanTarget) || cleanTarget.includes(cleanAss);
+        });
+        if (displayed.length === 0) displayed = electionList;
+    }
+
+    const bannerTextEl = document.getElementById('assemblyBannerText');
+    const bannerCountEl = document.getElementById('assemblyBadgeCount');
+    if (bannerTextEl) {
+        bannerTextEl.innerHTML = voterAssembly === 'all' 
+            ? `Showing Active Ballots across <strong>All Assemblies</strong>`
+            : `Showing Active Ballots for your Assembly: <strong>${voterAssembly}</strong>`;
+    }
+    if (bannerCountEl) {
+        bannerCountEl.textContent = `${displayed.length} Ballot(s) Active`;
+    }
+
+    electionsDiv.innerHTML = '';
+    displayed.forEach(e => {
+        const eid = e.id || e._id;
+        if (e._isBackend) {
+            window.electionSource = window.electionSource || {};
+            window.electionSource[eid] = 'backend';
+        }
+        renderElectionCard(eid, e, false);
+    });
+}
+
+// ---------- Elections and voting (Instant Load & Cache-First) ----------
+window.loadElections = function loadElections() {
     const isAdminPage = adminSection && adminSection.style.display === 'block';
     const endpoint = isAdminPage ? `${API_BASE}/elections` : `${API_BASE}/elections/active`;
 
     if (isAdminPage && window.loadAnalytics) window.loadAnalytics();
     window.electionSource = {};
 
-    let loadedElections = [];
+    // 1. INSTANT 0ms RENDER: Display cached verified ballots immediately
+    const cachedElections = getLocalElections();
+    renderFilteredElections(cachedElections);
 
-    // 1. Try Backend API first
+    // 2. FAST BACKGROUND REVALIDATE with 3-second timeout
     if (navigator.onLine) {
-        try {
-            const res = await fetch(endpoint);
-            if (res.ok) {
-                const list = await res.json();
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 3000);
+
+        fetch(endpoint, { signal: ctrl.signal })
+            .then(res => {
+                clearTimeout(timeoutId);
+                if (res.ok) return res.json();
+                throw new Error('Non-ok response');
+            })
+            .then(list => {
                 if (Array.isArray(list) && list.length > 0) {
-                    loadedElections = list.map(e => {
+                    const formatted = list.map(e => {
                         const rawCandidates = e.candidates || e.candidate || e.candidatesList || [];
                         const candidates = (rawCandidates || []).map(c => ({ 
                             _id: c._id || c.id, 
@@ -1062,84 +1102,13 @@ window.loadElections = async function loadElections() {
                             _isBackend: true 
                         });
                     });
+                    saveLocalElections(formatted);
+                    renderFilteredElections(formatted);
                 }
-            }
-        } catch (err) {
-            console.warn('Backend elections fetch error:', err.message);
-        }
-    }
-
-    // 2. Try Firestore if available and backend was empty
-    if (loadedElections.length === 0 && firebaseAvailable && firestoreModule && db) {
-        try {
-            const snap = await firestoreModule.getDocs(firestoreModule.collection(db, 'elections'));
-            if (!snap.empty) {
-                snap.forEach(docSnap => {
-                    const e = docSnap.data();
-                    if (e.active === false && !isAdminPage) return;
-                    loadedElections.push(Object.assign({}, e, { id: docSnap.id }));
-                });
-            }
-        } catch (e) {
-            console.warn('Firestore fetch fallback error:', e.message);
-        }
-    }
-
-    // 3. Fallback to Local Verified Elections if still empty (Guarantees elections NEVER show empty)
-    if (loadedElections.length === 0) {
-        console.log('[loadElections] Loading verified demo elections with live tallies');
-        loadedElections = getLocalElections();
-        // Trigger background seed on backend so next cloud fetch has persistent documents
-        try {
-            fetch(`${API_BASE}/seed?reset=true`, { method: 'POST' }).catch(() => {});
-        } catch(e) {}
-    }
-
-    // 4. Filter by Voter's Assembly (Voter sees ONLY his/her assembly's active ballot)
-    const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
-    const isVoter = activeRole === 'voter' && !isAdminPage;
-    let voterAssembly = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
-
-    const displayEl = document.getElementById('currentAssemblyDisplay');
-    if (displayEl) displayEl.textContent = voterAssembly === 'all' ? 'All Constituencies' : voterAssembly;
-
-    const selectEl = document.getElementById('voterAssemblySelect');
-    if (selectEl && selectEl.value !== voterAssembly) selectEl.value = voterAssembly;
-
-    let displayedElections = loadedElections;
-    if (isVoter && voterAssembly && voterAssembly !== 'all') {
-        const cleanTarget = voterAssembly.toLowerCase().replace(/[^a-z0-9]/g, '');
-        displayedElections = loadedElections.filter(e => {
-            const cleanAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            return cleanAss.includes(cleanTarget) || cleanTarget.includes(cleanAss);
-        });
-        if (displayedElections.length === 0) {
-            displayedElections = loadedElections;
-        }
-    }
-
-    const bannerTextEl = document.getElementById('assemblyBannerText');
-    const bannerCountEl = document.getElementById('assemblyBadgeCount');
-    if (bannerTextEl) {
-        bannerTextEl.innerHTML = voterAssembly === 'all' 
-            ? `Showing Active Ballots across <strong>All Assemblies</strong>`
-            : `Showing Active Ballots for your Assembly: <strong>${voterAssembly}</strong>`;
-    }
-    if (bannerCountEl) {
-        bannerCountEl.textContent = `${displayedElections.length} Ballot(s) Active`;
-    }
-
-    // 5. Render filtered elections immediately
-    if (electionsDiv) {
-        electionsDiv.innerHTML = '';
-        displayedElections.forEach(e => {
-            const eid = e.id || e._id;
-            if (e._isBackend) {
-                window.electionSource = window.electionSource || {};
-                window.electionSource[eid] = 'backend';
-            }
-            renderElectionCard(eid, e, false);
-        });
+            })
+            .catch(() => {
+                clearTimeout(timeoutId);
+            });
     }
 };
 
