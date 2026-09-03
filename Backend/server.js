@@ -18,12 +18,13 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/elections', require('./routes/elections'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Seed endpoint for manual or frontend trigger
+// Seed endpoint for manual or frontend trigger (Supports loksabha, vidhansabha, or all)
 app.all('/api/seed', async (req, res) => {
     try {
         const seedDatabase = require('./seed');
         const forceReset = req.query.reset === 'true' || req.body?.reset === true;
-        const result = await seedDatabase(forceReset);
+        const type = req.query.type || req.body?.type || 'all';
+        const result = await seedDatabase(type, forceReset);
         res.json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });

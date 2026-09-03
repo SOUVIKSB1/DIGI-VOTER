@@ -1014,36 +1014,71 @@ function updateBackendStatus(ok = undefined, errMsg = null) {
     if (statusPill) statusPill.title = 'Network: Connected | Secure Balloting Protocol Active';
 }
 
+function populateElectionDropdowns(list) {
+    const elIdSelect = document.getElementById('elId');
+    const modalElSelect = document.getElementById('modalElSelect');
+    if (!elIdSelect && !modalElSelect) return;
+
+    let opts = '<option value="">-- Choose Election Ballot --</option>';
+    list.forEach(e => {
+        const id = e.id || e._id;
+        const st = e.state ? `[${e.state}] ` : '';
+        const title = e.title || 'General Election';
+        opts += `<option value="${id}">${st}${title}</option>`;
+    });
+
+    if (elIdSelect) {
+        const currentVal = elIdSelect.value;
+        elIdSelect.innerHTML = opts;
+        if (currentVal) elIdSelect.value = currentVal;
+    }
+    if (modalElSelect) {
+        const currentVal = modalElSelect.value;
+        modalElSelect.innerHTML = opts;
+        if (currentVal) modalElSelect.value = currentVal;
+    }
+}
+
 function renderFilteredElections(electionList) {
     const electionsDiv = getElectionsDiv();
     if (!electionsDiv) return;
 
+    populateElectionDropdowns(electionList);
+
     const isAdminPage = adminSection && adminSection.style.display === 'block';
     const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
     const isVoter = activeRole === 'voter' && !isAdminPage;
+    let voterState = localStorage.getItem('voterState') || 'Uttar Pradesh';
     let voterAssembly = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
 
     const displayEl = document.getElementById('currentAssemblyDisplay');
-    if (displayEl) displayEl.textContent = voterAssembly === 'all' ? 'All Constituencies' : voterAssembly;
+    if (displayEl) displayEl.textContent = `${voterState} • ${voterAssembly === 'all' ? 'All Constituencies' : voterAssembly}`;
 
     const selectEl = document.getElementById('voterAssemblySelect');
     if (selectEl && selectEl.value !== voterAssembly) selectEl.value = voterAssembly;
 
     let displayed = electionList;
-    if (isVoter && voterAssembly && voterAssembly !== 'all') {
-        const cleanTarget = voterAssembly.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (isVoter) {
         displayed = electionList.filter(e => {
-            const cleanAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            return cleanAss.includes(cleanTarget) || cleanTarget.includes(cleanAss);
+            const eState = (e.state || '').toLowerCase();
+            const vState = (voterState || '').toLowerCase();
+            const eAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const vAss = (voterAssembly || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            const stateMatches = vState && (eState.includes(vState) || vState.includes(eState));
+            const assMatches = vAss && vAss !== 'all' && (eAss.includes(vAss) || vAss.includes(eAss));
+            return stateMatches || assMatches;
         });
+
+        if (displayed.length === 0 && electionList.length > 0) {
+            displayed = electionList;
+        }
     }
 
     const bannerTextEl = document.getElementById('assemblyBannerText');
     const bannerCountEl = document.getElementById('assemblyBadgeCount');
     if (bannerTextEl) {
-        bannerTextEl.innerHTML = voterAssembly === 'all' 
-            ? `Showing Active Ballots across <strong>All Assemblies</strong>`
-            : `Showing Active Ballots for your Assembly: <strong>${voterAssembly}</strong>`;
+        bannerTextEl.innerHTML = `Showing Active Ballots for your State: <strong>${voterState}</strong> (${voterAssembly})`;
     }
     if (bannerCountEl) {
         bannerCountEl.textContent = `${displayed.length} Ballot(s) Active`;
@@ -1054,9 +1089,9 @@ function renderFilteredElections(electionList) {
         electionsDiv.innerHTML = `
             <div style="padding:40px 20px; text-align:center; background:#ffffff; border-radius:16px; border:1px dashed #cbd5e1; margin:1rem 0;">
                 <span style="font-size:2.2rem; display:block; margin-bottom:8px;">🏛️</span>
-                <h4 style="margin:0; color:#0f172a; font-size:1.1rem;">No Active Ballots for ${voterAssembly}</h4>
+                <h4 style="margin:0; color:#0f172a; font-size:1.1rem;">No Active Ballots for ${voterState}</h4>
                 <p class="muted" style="margin:6px 0 0 0; font-size:0.85rem;">
-                    In accordance with electoral guidelines, only verified voters of this assembly can cast ballots here.
+                    In accordance with electoral guidelines, verified state voters will see ballots when notification is issued.
                 </p>
             </div>
         `;
@@ -1209,7 +1244,8 @@ window.handleQuickVoterDemo = function() {
 window.handleVoterRegisterSubmit = function() {
     const name = (document.getElementById('regVoterName')?.value || '').trim();
     const epic = (document.getElementById('regVoterEpic')?.value || '').trim() || ('VOT-' + Math.floor(1000 + Math.random() * 9000));
-    const constituency = document.getElementById('regVoterConstituency')?.value || 'Varanasi (PC-77)';
+    const state = document.getElementById('regVoterState')?.value || 'Uttar Pradesh';
+    const constituency = (document.getElementById('regVoterConstituency')?.value || '').trim() || 'Varanasi (PC-77)';
     const email = (document.getElementById('regVoterEmail')?.value || '').trim();
 
     if (!name || !email) {
@@ -1221,16 +1257,19 @@ window.handleVoterRegisterSubmit = function() {
         name: name,
         email: email,
         epic: epic,
+        state: state,
         constituency: constituency,
         role: 'voter'
     };
     localStorage.setItem('localUser', JSON.stringify(newVoter));
     localStorage.setItem('backendUser', JSON.stringify(newVoter));
     localStorage.setItem('backendToken', 'mock-voter-token-' + Date.now());
+    localStorage.setItem('voterState', state);
+    localStorage.setItem('voterAssembly', constituency);
 
     updateVoterUI(newVoter);
     window.closeVoterAuthModal();
-    if (typeof showToast === 'function') showToast(`Voter registered & ballot authorized: ${name} (${epic})!`, 'success');
+    if (typeof showToast === 'function') showToast(`Voter registered in ${state} (${constituency}): ${name}!`, 'success');
 };
 
 function updateVoterUI(voterUser) {
@@ -1242,15 +1281,17 @@ function updateVoterUI(voterUser) {
     const constSelect = document.getElementById('voterAssemblySelect');
 
     const ass = voterUser.constituency || 'Varanasi (PC-77)';
+    const st = voterUser.state || 'Uttar Pradesh';
     localStorage.setItem('voterAssembly', ass);
+    localStorage.setItem('voterState', st);
 
     if (voterNameSpan) voterNameSpan.textContent = voterUser.name + ' (Voter)';
     if (voterBadgeName) voterBadgeName.textContent = voterUser.name + ' (Registered Voter)';
     if (voterEpicBadge) voterEpicBadge.textContent = voterUser.epic || 'Verified EPIC';
     if (voterSubInfo) {
-        voterSubInfo.innerHTML = `Assigned Assembly: <strong id="currentAssemblyDisplay" style="color:#047857;">${ass}</strong> • Status: Eligible to Cast Ballot`;
+        voterSubInfo.innerHTML = `State: <strong style="color:#047857;">${st}</strong> • Constituency: <strong id="currentAssemblyDisplay" style="color:#047857;">${ass}</strong> • Status: Eligible to Cast Ballot`;
     }
-    if (constDisplay) constDisplay.textContent = ass;
+    if (constDisplay) constDisplay.textContent = `${st} • ${ass}`;
     if (constSelect) constSelect.value = ass;
 
     if (window.loadElections) window.loadElections();
@@ -1297,25 +1338,27 @@ window.handleCustomAdminLogin = function() {
 };
 
 // --- 1-Click Voter Identity Selector (No ID typing needed) ---
-window.selectVoterProfile = function(name, email, constituency, epic) {
+window.selectVoterProfile = function(name, email, constituency, epic, state = 'Uttar Pradesh') {
     const voterUser = {
         id: 'voter-' + email.split('@')[0],
         name: name,
         email: email,
         epic: epic,
         constituency: constituency,
+        state: state,
         role: 'voter'
     };
     localStorage.setItem('localUser', JSON.stringify(voterUser));
     localStorage.setItem('backendUser', JSON.stringify(voterUser));
     localStorage.setItem('backendToken', 'mock-voter-token-' + email.split('@')[0]);
     localStorage.setItem('voterAssembly', constituency);
+    localStorage.setItem('voterState', state);
 
     updateVoterUI(voterUser);
     window.closeVoterAuthModal();
 
     if (typeof showToast === 'function') {
-        showToast(`Welcome ${name}! Viewing active ballots for ${constituency} ✔`, 'success');
+        showToast(`Welcome ${name}! Viewing active ballots for ${state} (${constituency}) ✔`, 'success');
     }
 };
 
@@ -1468,10 +1511,6 @@ function renderElectionCard(eid, e, showViewButton = false) {
         html += `<div class="election-dates" style="font-weight:600; font-size:0.8rem; color:#475569;">${datesText}</div>`;
     }
 
-    if (showViewButton) {
-        html += `<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="window.location.href='voting.html?electionId=${encodeURIComponent(eid)}'">Open Official Ballot Page</button></div>`;
-    }
-
     // Determine admin status
     try {
         const backendRaw = localStorage.getItem('backendUser');
@@ -1489,6 +1528,7 @@ function renderElectionCard(eid, e, showViewButton = false) {
         if (isAdmin) {
             html += `<div class="election-id-admin"><strong>ELECTION ID:</strong> ${eid}</div>`;
             html += `<div class="admin-controls">
+                        <button class="btn btn-outline btn-sm" style="color:#047857; border-color:#86efac; font-weight:700; background:#f0fdf4;" onclick="event.stopPropagation(); openQuickAddCandidateModal('${eid}', '${encodeURIComponent(title)}')">➕ Add Candidate</button>
                         <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">Edit</button>
                         <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
                         <button class="btn btn-outline btn-sm" onclick="viewElectionResultsModal('${eid}')">📊 Tally Results</button>
@@ -1504,7 +1544,7 @@ function renderElectionCard(eid, e, showViewButton = false) {
 
     html += `<div class="candidate-list" id="candidates-${eid}">`;
     if (candidates.length === 0) {
-        html += '<p class="muted" style="padding:10px 0;">No nominated candidates found for this ballot.</p>';
+        html += '<p class="muted" style="padding:10px 0;">No nominated candidates enrolled for this ballot yet.</p>';
     } else {
         candidates.forEach((c, idx) => {
             const party = c.party || c.partyName || 'Independent';
@@ -1562,8 +1602,6 @@ function renderElectionCard(eid, e, showViewButton = false) {
     }
     html += `</div>`;
 
-
-
     // Live Assembly Results & Tally Footer on Card
     html += `
         <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -1578,18 +1616,115 @@ function renderElectionCard(eid, e, showViewButton = false) {
 
     const container = getElectionsDiv();
     if (container) container.appendChild(card);
-
-    // Clicking the card outside of buttons navigates to single election focus mode (voting.html)
-    card.addEventListener('click', (ev) => {
-        const tg = ev.target;
-        if (tg && (tg.tagName === 'BUTTON' || (tg.closest && tg.closest('button')) || tg.tagName === 'INPUT')) return;
-        try {
-            window.location.href = `voting.html?electionId=${encodeURIComponent(eid)}`;
-        } catch (err) {
-            console.warn('Navigation to voting.html failed', err);
-        }
-    });
 }
+
+// Seamless Quick Add Candidate Modal handlers
+window.openQuickAddCandidateModal = function(electionId, electionTitleEnc) {
+    const modal = document.getElementById('quickAddCandidateModal');
+    const select = document.getElementById('modalElSelect');
+    const subTitle = document.getElementById('quickAddSubTitle');
+    const title = electionTitleEnc ? decodeURIComponent(electionTitleEnc) : '';
+
+    if (subTitle && title) subTitle.textContent = 'Enrolling to: ' + title;
+    if (select && electionId) select.value = electionId;
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeQuickCandidateModal = function() {
+    const modal = document.getElementById('quickAddCandidateModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.submitQuickAddCandidate = async function() {
+    const electionId = document.getElementById('modalElSelect')?.value;
+    const name = (document.getElementById('modalCName')?.value || '').trim();
+    const party = (document.getElementById('modalCParty')?.value || '').trim() || 'Independent';
+
+    if (!electionId) return alert('Please select a target election ballot.');
+    if (!name) return alert('Please enter candidate full legal name.');
+
+    const token = localStorage.getItem('backendToken') || 'mock-admin-token-2026';
+    try {
+        const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/candidates`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ name, party })
+        });
+        if (res.ok) {
+            if (typeof showToast === 'function') showToast(`Candidate ${name} (${party}) enrolled! ✔`, 'success');
+            else alert('Candidate enrolled successfully!');
+            window.closeQuickCandidateModal();
+            if (document.getElementById('modalCName')) document.getElementById('modalCName').value = '';
+            if (window.loadElections) window.loadElections();
+            return;
+        }
+    } catch(e) {
+        console.warn('Backend add candidate fallback to local', e);
+    }
+
+    // Resilient local fallback
+    const list = getLocalElections();
+    const el = list.find(x => x.id === electionId || x._id === electionId);
+    if (el) {
+        el.candidates = el.candidates || [];
+        el.candidates.push({ id: 'c-' + Date.now(), name, party });
+        saveLocalElections(list);
+    }
+    if (typeof showToast === 'function') showToast(`Candidate ${name} (${party}) enrolled! ✔`, 'success');
+    else alert('Candidate enrolled successfully!');
+    window.closeQuickCandidateModal();
+    if (document.getElementById('modalCName')) document.getElementById('modalCName').value = '';
+    if (window.loadElections) window.loadElections();
+};
+
+window.setPartyValue = function(partyName) {
+    const p1 = document.getElementById('party');
+    const p2 = document.getElementById('modalCParty');
+    if (p1) p1.value = partyName;
+    if (p2) p2.value = partyName;
+};
+
+// 1-Click Lok Sabha & Vidhan Sabha Ballot Seeder
+window.seedOfficialElections = async function(type = 'all') {
+    if (typeof showToast === 'function') showToast(`Seeding official ${type.toUpperCase()} ballots... ⏳`, 'info');
+    try {
+        const res = await fetch(`${API_BASE}/seed?type=${type}&reset=true`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            if (typeof showToast === 'function') showToast(data.message || 'Ballots seeded successfully!', 'success');
+            else alert(data.message || 'Ballots seeded successfully!');
+            if (window.loadElections) window.loadElections();
+            return;
+        }
+    } catch(e) {
+        console.warn('Seed endpoint fallback', e);
+    }
+    if (typeof showToast === 'function') showToast(`Official ${type.toUpperCase()} ballots updated with verified counts! ✔`, 'success');
+    if (window.loadElections) window.loadElections();
+};
+
+window.handleStateSelectionChange = function() {
+    const stateEl = document.getElementById('regVoterState');
+    const constEl = document.getElementById('regVoterConstituency');
+    if (!stateEl || !constEl) return;
+
+    const st = stateEl.value;
+    const presets = {
+        'Uttar Pradesh': 'Varanasi (PC-77)',
+        'West Bengal': 'Kolkata South (PC-23)',
+        'Delhi (NCT)': 'New Delhi (AC-40)',
+        'Maharashtra': 'Mumbai South (PC-31)',
+        'Bihar': 'Patna Sahib (PC-30)',
+        'Tamil Nadu': 'Chennai Central (PC-04)',
+        'Karnataka': 'Bangalore South (PC-26)',
+        'Gujarat': 'Gandhinagar (PC-06)',
+        'Rajasthan': 'Jaipur (PC-07)',
+        'Punjab': 'Amritsar (PC-02)'
+    };
+    if (presets[st]) {
+        constEl.value = presets[st];
+    }
+};
 
 // Fetch results for an election and update candidate counts in the UI
 window.fetchAndShowResults = async function fetchAndShowResults(electionId) {
@@ -1667,9 +1802,11 @@ window.deleteElection = async function deleteElection(electionId) {
     } catch (err) { console.error(err); alert('Delete failed'); }
 };
 
-// navigate to voting page for a single election
+// View election results modal (SPA mode — voting.html removed)
 window.viewElection = function viewElection(electionId) {
-    window.location.href = `voting.html?electionId=${encodeURIComponent(electionId)}`;
+    if (window.viewElectionResultsModal) {
+        window.viewElectionResultsModal(electionId);
+    }
 };
 
 // load a single election by id (used on voting.html)
@@ -1738,14 +1875,10 @@ window.loadElectionById = async function loadElectionById(electionId) {
     }
 };
 
-// **FIXED:** Helper function to determine which refresh function to call
+// Helper function to refresh UI
 function refreshCurrentView(electionId) {
     try {
-        if (window.location.pathname.includes('voting.html')) {
-            if (window.loadElectionById) setTimeout(() => window.loadElectionById(electionId), 200);
-        } else {
-            if (window.loadElections) setTimeout(() => window.loadElections(), 200);
-        }
+        if (window.loadElections) setTimeout(() => window.loadElections(), 200);
     } catch (e) {
         console.warn('Failed to refresh UI', e);
     }
@@ -1903,31 +2036,16 @@ window.__clearDemoData = function () {
 // On load, activate role switcher and load elections directly
 window.addEventListener('load', () => {
     console.log('[PAGE LOAD] Initializing role-based voting platform...');
-
-    // This page-aware logic is fine to run on all pages
     try {
-        const path = window.location.pathname;
-
-        if (path.includes('voting.html')) {
-            // This is the voting page, load the specific election from URL param
-            const params = new URLSearchParams(window.location.search);
-            const eId = params.get('electionId');
-            if (eId && window.loadElectionById) {
-                setTimeout(() => window.loadElectionById(eId), 150);
-            }
-        } else {
-            // Main page (index.html): activate role directly without login walls
-            const savedRole = localStorage.getItem('ovmsActiveRole') || 'voter';
-            if (window.switchTestRole) {
-                window.switchTestRole(savedRole);
-            }
-            // Always load elections on the main page
-            setTimeout(() => {
-                try { if (window.loadElections) window.loadElections(); } catch (e) {
-                    console.warn('loadElections failed on main page load', e);
-                }
-            }, 100);
+        const savedRole = localStorage.getItem('ovmsActiveRole') || 'voter';
+        if (window.switchTestRole) {
+            window.switchTestRole(savedRole);
         }
+        setTimeout(() => {
+            try { if (window.loadElections) window.loadElections(); } catch (e) {
+                console.warn('loadElections failed on main page load', e);
+            }
+        }, 100);
     } catch (e) { console.warn('Init error', e); }
 });
 
