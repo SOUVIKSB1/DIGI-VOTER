@@ -1673,12 +1673,12 @@ function renderElectionCard(eid, e, showViewButton = false) {
             const isVisAll = !!(e.visibleToAll || e.state === 'All States' || e.assembly === 'All Assemblies');
             html += `<div class="election-id-admin"><strong>ELECTION ID:</strong> ${eid}</div>`;
             html += `<div class="admin-controls">
-                        <button class="btn btn-outline btn-sm" style="color:#047857; border-color:#86efac; font-weight:700; background:#f0fdf4;" onclick="event.stopPropagation(); openQuickAddCandidateModal('${eid}', '${encodeURIComponent(title)}')">➕ Add Candidate</button>
-                        <button class="btn btn-outline btn-sm" style="${isVisAll ? 'color:#15803d; border-color:#86efac; background:#dcfce7; font-weight:700;' : 'color:#1e40af; border-color:#93c5fd; background:#eff6ff; font-weight:600;'}" onclick="event.stopPropagation(); toggleVisibleToAll('${eid}')">🌐 ${isVisAll ? 'Visible to ALL Voters ✔' : '👁️ Make Visible to All'}</button>
-                        <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">Edit</button>
-                        <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
-                        <button class="btn btn-outline btn-sm" onclick="viewElectionResultsModal('${eid}')">📊 Tally Results</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteElection('${eid}')">Delete</button>
+                        <button class="btn btn-outline btn-sm" style="color:#047857; border-color:#86efac; font-weight:700; background:#f0fdf4;" onclick="event.stopPropagation(); openQuickAddCandidateModal('${eid}', '${encodeURIComponent(title)}')">➕ Candidate</button>
+                        <button class="btn btn-outline btn-sm" style="${isVisAll ? 'color:#15803d; border-color:#86efac; background:#dcfce7; font-weight:700;' : 'color:#1e40af; border-color:#93c5fd; background:#eff6ff; font-weight:600;'}" onclick="event.stopPropagation(); toggleVisibleToAll('${eid}')">🌐 ${isVisAll ? 'All Voters ✔' : 'Broadcast'}</button>
+                        <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">✏️ Edit</button>
+                        <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">⚡ Status</button>
+                        <button class="btn btn-outline btn-sm" onclick="viewElectionResultsModal('${eid}')">📊 Results</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteElection('${eid}')">🗑️ Delete</button>
                      </div>`;
         }
     } catch (err) { console.warn('Admin control render error', err); }
