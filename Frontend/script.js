@@ -1736,71 +1736,7 @@ window.addEventListener('load', () => {
     } catch (e) { console.warn('Init error', e); }
 });
 
-// ---------------- Theme switcher (runtime) ----------------
-// Inject a small floating theme switcher so user can toggle themes across pages.
-(function initThemeSwitcher() {
-    const themes = {
-        default: {
-            '--saffron': '#FF671F',
-            '--deepgreen': '#046A38',
-            '--card': '#ffffff',
-            '--muted': '#6b7280',
-            '--shadow': '0 6px 25px rgba(0,0,0,0.12)',
-            '--font-family': '"Poppins", sans-serif'
-        },
-        dark: {
-            '--saffron': '#FF8A4B',
-            '--deepgreen': '#0b8a4a',
-            '--card': '#0f1724',
-            '--muted': '#9aa4b2',
-            '--shadow': '0 6px 25px rgba(0,0,0,0.6)',
-            '--font-family': '"Poppins", sans-serif'
-        }
-    };
-
-    function applyTheme(name) {
-        const t = themes[name] || themes.default;
-        const root = document.documentElement;
-        Object.keys(t).forEach(k => root.style.setProperty(k, t[k]));
-        localStorage.setItem('ovmsTheme', name);
-    }
-
-    function currentTheme() { return localStorage.getItem('ovmsTheme') || 'default'; }
-
-    // create UI
-    try {
-        const existing = document.getElementById('ovms-theme-switcher');
-        if (existing) return; // already injected
-
-        const style = document.createElement('style');
-        style.textContent = `
-            #ovms-theme-switcher{position:fixed;right:14px;bottom:18px;z-index:99999;font-family:var(--font-family);} 
-            #ovms-theme-switcher button{background:var(--saffron);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow)}
-            #ovms-theme-switcher .menu{display:none;background:var(--card);padding:8px;border-radius:8px;box-shadow:var(--shadow);margin-top:8px}
-            #ovms-theme-switcher .menu button{display:block;width:100%;margin:6px 0;padding:8px;border-radius:6px;background:transparent;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
-        `;
-        document.head.appendChild(style);
-
-        const container = document.createElement('div');
-        container.id = 'ovms-theme-switcher';
-        const btn = document.createElement('button');
-        btn.textContent = 'Theme';
-        const menu = document.createElement('div');
-        menu.className = 'menu';
-        const defBtn = document.createElement('button'); defBtn.textContent = 'Default';
-        const darkBtn = document.createElement('button'); darkBtn.textContent = 'Dark';
-        menu.appendChild(defBtn); menu.appendChild(darkBtn);
-        container.appendChild(btn); container.appendChild(menu);
-        document.body.appendChild(container);
-
-        btn.addEventListener('click', () => { menu.style.display = (menu.style.display === 'block') ? 'none' : 'block'; });
-        defBtn.addEventListener('click', () => { applyTheme('default'); menu.style.display = 'none'; });
-        darkBtn.addEventListener('click', () => { applyTheme('dark'); menu.style.display = 'none'; });
-
-        // apply persisted theme
-        applyTheme(currentTheme());
-    } catch (e) { console.warn('Theme switcher injection failed', e); }
-})();
+// Theme switcher removed per user request
 
 /* ==========================
    Loader + Success helpers
