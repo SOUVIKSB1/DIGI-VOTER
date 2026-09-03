@@ -1,16 +1,12 @@
 services:
   - type: web
-    name: votevision-ai
-    env: python
-    region: oregon
+    name: digi-voter
+    env: node
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r Backend/requirements.txt
-    startCommand: cd Backend && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 "app:create_app('production')"
-    healthCheckPath: /api/v1/health
+    buildCommand: cd Backend && npm install
+    startCommand: cd Backend && npm start
     envVars:
-      - key: FLASK_ENV
+      - key: NODE_ENV
         value: production
-      - key: SECRET_KEY
-        generateValue: true
-      - key: CORS_ORIGINS
-        value: "*"
+      - key: PORT
+        value: 5002

@@ -1,3 +1,0 @@
-"""
-VoteVision AI Tests Package
-"""

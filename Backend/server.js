@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
 
 const app = express();
@@ -17,9 +19,19 @@ app.use('/api/elections', require('./routes/elections'));
 app.use('/api/admin', require('./routes/admin'));
 
 // basic root
-app.get('/', (req, res) => res.send('OVMS backend running'));
 app.get('/api', (req, res) => res.send('OVMS API running'));
 app.get('/api/', (req, res) => res.send('OVMS API running'));
+
+// Serve Frontend static assets if directory exists
+const frontendDir = path.join(__dirname, '../Frontend');
+if (fs.existsSync(frontendDir)) {
+    app.use(express.static(frontendDir));
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(frontendDir, 'index.html'));
+    });
+} else {
+    app.get('/', (req, res) => res.send('OVMS backend running'));
+}
 
 // 404
 app.use((req, res) => res.status(404).json({ message: 'Not Found' }));
