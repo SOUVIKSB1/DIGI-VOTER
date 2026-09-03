@@ -76,34 +76,42 @@ window.switchTestRole = function(role) {
         if (window.loadElections) window.loadElections();
         if (window.loadAnalytics) window.loadAnalytics();
     } else {
-        // Retrieve current active voter if already logged in, otherwise default to Souvik
-        let currentVoter = JSON.parse(localStorage.getItem('localUser') || 'null');
-        if (!currentVoter || currentVoter.role !== 'voter') {
-            currentVoter = {
-                id: 'voter-' + Date.now(),
-                name: 'Souvik (Voter)',
-                email: 'souvik@digivoter.in',
-                role: 'voter',
-                state: localStorage.getItem('voterState') || 'Uttar Pradesh',
-                constituency: localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)',
-                epic: 'VOT-2026-7892'
-            };
-            localStorage.setItem('localUser', JSON.stringify(currentVoter));
-            localStorage.setItem('backendUser', JSON.stringify(currentVoter));
-        }
-
-        // Fetch user-specific token
+        // Retrieve actual logged-in voter from dedicated storage (never invent hardcoded fake voter)
+        let savedVoter = null;
         try {
-            fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(currentVoter.email)}&name=${encodeURIComponent(currentVoter.name)}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data && data.token) {
-                        localStorage.setItem('backendToken', data.token);
-                        if (data.user) localStorage.setItem('backendUser', JSON.stringify(data.user));
-                    }
-                })
-                .catch(() => {});
-        } catch(e) {}
+            savedVoter = JSON.parse(localStorage.getItem('authenticatedVoterUser') || 'null');
+        } catch(e) { savedVoter = null; }
+
+        if (savedVoter && savedVoter.email) {
+            localStorage.setItem('localUser', JSON.stringify(savedVoter));
+            localStorage.setItem('backendUser', JSON.stringify(savedVoter));
+            localStorage.setItem('voterAuthSession', 'true');
+            updateVoterUI(savedVoter);
+
+            // Fetch user-specific token
+            try {
+                fetch(`${API_BASE}/auth/token?role=voter&email=${encodeURIComponent(savedVoter.email)}&name=${encodeURIComponent(savedVoter.name)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.token) {
+                            localStorage.setItem('backendToken', data.token);
+                            if (data.user) localStorage.setItem('backendUser', JSON.stringify(data.user));
+                        }
+                    })
+                    .catch(() => {});
+            } catch(e) {}
+        } else {
+            // Not authenticated as voter: clear voter session and prompt for credentials
+            localStorage.removeItem('localUser');
+            localStorage.removeItem('backendUser');
+            localStorage.removeItem('backendToken');
+            localStorage.removeItem('voterAuthSession');
+            updateVoterUI(null);
+
+            setTimeout(() => {
+                if (window.openVoterAuthModal) window.openVoterAuthModal('login');
+            }, 300);
+        }
 
         // Segmented Slider Animation to Voter
         if (segControl) segControl.classList.remove('admin-active');
@@ -115,16 +123,16 @@ window.switchTestRole = function(role) {
             roleIndicator.className = 'role-indicator voter';
         }
 
-        if (authSection) authSection.style.display = 'none';
         if (adminSection) adminSection.style.display = 'none';
+        if (authSection) authSection.style.display = 'none';
         if (voterSection) {
             voterSection.style.display = 'block';
             voterSection.classList.remove('role-switch-anim');
-            void voterSection.offsetWidth; // Trigger CSS animation restart
+            void voterSection.offsetWidth;
             voterSection.classList.add('role-switch-anim');
         }
 
-        updateVoterUI(currentVoter);
+        if (window.loadElections) window.loadElections();
     }
 };
 
@@ -1249,6 +1257,7 @@ window.handleVoterLoginSubmit = async function() {
         state: selectedState,
         constituency: constituency
     };
+    localStorage.setItem('authenticatedVoterUser', JSON.stringify(voterUser));
     localStorage.setItem('localUser', JSON.stringify(voterUser));
     localStorage.setItem('backendUser', JSON.stringify(voterUser));
     localStorage.setItem('voterAuthSession', 'true');
@@ -1267,11 +1276,14 @@ window.handleQuickVoterDemo = function() {
         email: 'voter@digivoter.gov.in',
         role: 'voter',
         epic: 'VOT-2026-7892',
-        constituency: 'Varanasi (PC-77)'
+        constituency: 'Varanasi (PC-77)',
+        state: 'Uttar Pradesh'
     };
+    localStorage.setItem('authenticatedVoterUser', JSON.stringify(voterUser));
     localStorage.setItem('localUser', JSON.stringify(voterUser));
     localStorage.setItem('backendUser', JSON.stringify(voterUser));
     localStorage.setItem('backendToken', 'mock-voter-token-2026');
+    localStorage.setItem('voterAuthSession', 'true');
 
     updateVoterUI(voterUser);
     window.closeVoterAuthModal();
@@ -1298,9 +1310,11 @@ window.handleVoterRegisterSubmit = function() {
         constituency: constituency,
         role: 'voter'
     };
+    localStorage.setItem('authenticatedVoterUser', JSON.stringify(newVoter));
     localStorage.setItem('localUser', JSON.stringify(newVoter));
     localStorage.setItem('backendUser', JSON.stringify(newVoter));
     localStorage.setItem('backendToken', 'mock-voter-token-' + Date.now());
+    localStorage.setItem('voterAuthSession', 'true');
     localStorage.setItem('voterState', state);
     localStorage.setItem('voterAssembly', constituency);
 
@@ -1325,14 +1339,37 @@ function updateVoterUI(voterUser) {
     const constDisplay = document.getElementById('currentAssemblyDisplay');
     const constSelect = document.getElementById('voterAssemblySelect');
 
+    if (!voterUser) {
+        if (voterBadgeName) voterBadgeName.textContent = 'Elector Not Authenticated';
+        if (voterEpicBadge) {
+            voterEpicBadge.textContent = '🔒 Login Required';
+            voterEpicBadge.className = 'status-badge';
+            voterEpicBadge.style.background = '#fee2e2';
+            voterEpicBadge.style.color = '#991b1b';
+            voterEpicBadge.style.borderColor = '#fca5a5';
+        }
+        if (voterSubInfo) {
+            voterSubInfo.innerHTML = `Please <a href="javascript:void(0)" onclick="openVoterAuthModal('login')" style="color:#047857; font-weight:700; text-decoration:underline;">login</a> or <a href="javascript:void(0)" onclick="openVoterAuthModal('register')" style="color:#047857; font-weight:700; text-decoration:underline;">register (Form 6)</a> to cast your official ballot.`;
+        }
+        if (constDisplay) constDisplay.textContent = 'National Roll';
+        if (window.loadElections) window.loadElections();
+        return;
+    }
+
     const ass = voterUser.constituency || 'Varanasi (PC-77)';
     const st = voterUser.state || 'Uttar Pradesh';
     localStorage.setItem('voterAssembly', ass);
     localStorage.setItem('voterState', st);
 
     if (voterNameSpan) voterNameSpan.textContent = voterUser.name + ' (Voter)';
-    if (voterBadgeName) voterBadgeName.textContent = voterUser.name + ' (Registered Voter)';
-    if (voterEpicBadge) voterEpicBadge.textContent = voterUser.epic || 'Verified EPIC';
+    if (voterBadgeName) voterBadgeName.textContent = voterUser.name;
+    if (voterEpicBadge) {
+        voterEpicBadge.textContent = voterUser.epic || 'Verified EPIC';
+        voterEpicBadge.className = 'status-badge online';
+        voterEpicBadge.style.background = '';
+        voterEpicBadge.style.color = '';
+        voterEpicBadge.style.borderColor = '';
+    }
     if (voterSubInfo) {
         voterSubInfo.innerHTML = `State: <strong style="color:#047857;">${st}</strong> • Constituency: <strong id="currentAssemblyDisplay" style="color:#047857;">${ass}</strong> • Status: Eligible to Cast Ballot`;
     }
@@ -1423,6 +1460,7 @@ window.selectVoterProfile = function(name, email, constituency, epic, state = 'U
         state: state,
         role: 'voter'
     };
+    localStorage.setItem('authenticatedVoterUser', JSON.stringify(voterUser));
     localStorage.setItem('localUser', JSON.stringify(voterUser));
     localStorage.setItem('backendUser', JSON.stringify(voterUser));
     localStorage.setItem('voterAuthSession', 'true');
@@ -1488,6 +1526,7 @@ window.showToast = function(message, type = 'success') {
 
 // Global Logout Handler (Voter & Admin)
 window.logoutUser = function() {
+    localStorage.removeItem('authenticatedVoterUser');
     localStorage.removeItem('localUser');
     localStorage.removeItem('backendUser');
     localStorage.removeItem('backendToken');
@@ -2806,13 +2845,21 @@ window.deleteElectionById = async function deleteElectionById() {
 
 // Initial First-Time Auth Bootstrap
 function checkInitialAuth() {
-    const hasAuth = localStorage.getItem('voterAuthSession') === 'true' && localStorage.getItem('localUser');
+    const savedVoterRaw = localStorage.getItem('authenticatedVoterUser');
     const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
     
-    if (activeRole === 'voter' && !hasAuth) {
-        setTimeout(() => {
-            window.openVoterAuthModal('login');
-        }, 300);
+    if (activeRole === 'voter') {
+        if (!savedVoterRaw) {
+            updateVoterUI(null);
+            setTimeout(() => {
+                window.openVoterAuthModal('login');
+            }, 300);
+        } else {
+            try {
+                const voter = JSON.parse(savedVoterRaw);
+                if (voter && voter.email) updateVoterUI(voter);
+            } catch(e) {}
+        }
     }
 }
 
