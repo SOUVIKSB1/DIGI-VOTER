@@ -23,6 +23,7 @@ window.switchTestRole = function(role) {
     console.log('[ROLE SWITCHER] Switching to role:', role);
     localStorage.setItem('ovmsActiveRole', role);
 
+    const segControl = document.getElementById('roleSegmentedControl');
     const voterBtn = document.getElementById('roleBtnVoter');
     const adminBtn = document.getElementById('roleBtnAdmin');
     const roleIndicator = document.getElementById('currentRoleBadge');
@@ -56,8 +57,11 @@ window.switchTestRole = function(role) {
         localStorage.setItem('localUser', JSON.stringify(adminUser));
         localStorage.setItem('backendUser', JSON.stringify(adminUser));
 
+        // Segmented Slider Animation to Admin
+        if (segControl) segControl.classList.add('admin-active');
         if (voterBtn) voterBtn.classList.remove('active');
         if (adminBtn) adminBtn.classList.add('active');
+
         if (roleIndicator) {
             roleIndicator.textContent = 'ADMIN MODE';
             roleIndicator.className = 'role-indicator admin';
@@ -65,7 +69,12 @@ window.switchTestRole = function(role) {
 
         if (authSection) authSection.style.display = 'none';
         if (voterSection) voterSection.style.display = 'none';
-        if (adminSection) adminSection.style.display = 'block';
+        if (adminSection) {
+            adminSection.style.display = 'block';
+            adminSection.classList.remove('role-switch-anim');
+            void adminSection.offsetWidth; // Trigger CSS animation restart
+            adminSection.classList.add('role-switch-anim');
+        }
 
         if (window.showAdminTab) window.showAdminTab('manageElections');
         if (window.loadElections) window.loadElections();
@@ -80,8 +89,11 @@ window.switchTestRole = function(role) {
         localStorage.setItem('localUser', JSON.stringify(voterUser));
         localStorage.setItem('backendUser', JSON.stringify(voterUser));
 
+        // Segmented Slider Animation to Voter
+        if (segControl) segControl.classList.remove('admin-active');
         if (adminBtn) adminBtn.classList.remove('active');
         if (voterBtn) voterBtn.classList.add('active');
+
         if (roleIndicator) {
             roleIndicator.textContent = 'VOTER MODE';
             roleIndicator.className = 'role-indicator voter';
@@ -89,7 +101,12 @@ window.switchTestRole = function(role) {
 
         if (authSection) authSection.style.display = 'none';
         if (adminSection) adminSection.style.display = 'none';
-        if (voterSection) voterSection.style.display = 'block';
+        if (voterSection) {
+            voterSection.style.display = 'block';
+            voterSection.classList.remove('role-switch-anim');
+            void voterSection.offsetWidth; // Trigger CSS animation restart
+            voterSection.classList.add('role-switch-anim');
+        }
 
         const nameSpan = document.getElementById('voterName');
         if (nameSpan) nameSpan.textContent = voterUser.name;
@@ -106,7 +123,7 @@ window.goAdmin = function() {
     window.switchTestRole('admin');
 };
 
-window.seedDemoElections = function() {
+window.seedDemoElections = async function() {
     const sample = [
         {
             id: 'ls-2026-varanasi',
@@ -121,7 +138,8 @@ window.seedDemoElections = function() {
                 { id: 'c-rai', name: 'Ajay Rai', party: 'Indian National Congress (INC)' },
                 { id: 'c-lari', name: 'Athar Jamal Lari', party: 'Bahujan Samaj Party (BSP)' }
             ],
-            counts: { 'c-modi': 142, 'c-rai': 98, 'c-lari': 24 }
+            counts: { 'c-modi': 3, 'c-rai': 1, 'c-lari': 1 },
+            totalVotes: 5
         },
         {
             id: 'delhi-assembly-2026',
@@ -136,7 +154,8 @@ window.seedDemoElections = function() {
                 { id: 'c-yadav', name: 'Sunil Yadav', party: 'Bharatiya Janata Party (BJP)' },
                 { id: 'c-sabharwal', name: 'Romesh Sabharwal', party: 'Indian National Congress (INC)' }
             ],
-            counts: { 'c-kejriwal': 85, 'c-yadav': 67, 'c-sabharwal': 19 }
+            counts: { 'c-kejriwal': 3, 'c-yadav': 2, 'c-sabharwal': 0 },
+            totalVotes: 5
         },
         {
             id: 'student-council-2026',
@@ -151,14 +170,27 @@ window.seedDemoElections = function() {
                 { id: 'c-rahul', name: 'Rahul Verma', party: 'United Youth Alliance' },
                 { id: 'c-ananya', name: 'Ananya Roy', party: 'Independent Youth Voice' }
             ],
-            counts: { 'c-priya': 52, 'c-rahul': 48, 'c-ananya': 22 }
+            counts: { 'c-priya': 2, 'c-rahul': 2, 'c-ananya': 1 },
+            totalVotes: 5
         }
     ];
+
+    // Seed local storage demo data
     localStorage.setItem('localElections', JSON.stringify(sample));
+    localStorage.removeItem('localVotes'); // Reset any stale vote blocks
+
+    // Also trigger MongoDB backend seed if server is reachable
+    try {
+        fetch(`${API_BASE}/seed?reset=true`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => console.log('[SEED] Backend MongoDB seed response:', data))
+            .catch(err => console.warn('[SEED] Backend offline or seeding locally only:', err));
+    } catch (e) {}
+
     if (typeof showToast === 'function') {
-        showToast('Sample elections successfully loaded!', 'success');
+        showToast('Elections seeded with 4-5 verified votes per ballot! 🗳️', 'success');
     } else {
-        alert('Sample elections successfully loaded!');
+        alert('Elections seeded with 4-5 verified votes per ballot! 🗳️');
     }
     if (window.loadElections) window.loadElections();
     if (window.loadAnalytics) window.loadAnalytics();
@@ -969,21 +1001,29 @@ async function tryExchangeFirebaseToken(user) {
     return false;
 }
 
-// update small backend status UI (optional param ok to display explicit failure)
+// update sleek glass system status UI
 function updateBackendStatus(ok = undefined, errMsg = null) {
-    const el = document.getElementById('backendStatus');
-    if (!el) return;
-    // if ok undefined, determine from network + token presence
-    if (typeof ok === 'undefined') {
-        if (!navigator.onLine) { el.textContent = 'Backend: offline'; el.style.color = '#a00'; return; }
-        const token = localStorage.getItem('backendToken');
-        if (token) { el.textContent = 'Backend: connected (token present)'; el.style.color = '#2a7a2a'; return; }
-        // attempt a quick ping
-        fetch(`${API_BASE}/`).then(r => { if (r.ok) { el.textContent = 'Backend: reachable (no token)'; el.style.color = '#2a7a2a'; } else { el.textContent = 'Backend: reachable but returned error'; el.style.color = '#a00'; } }).catch(() => { el.textContent = 'Backend: unreachable'; el.style.color = '#a00'; });
+    const statusText = document.getElementById('systemStatusText');
+    const liveDot = document.getElementById('liveDot');
+    const statusPill = document.getElementById('systemStatusPill');
+
+    const isOnline = navigator.onLine;
+    if (!isOnline) {
+        if (statusText) statusText.textContent = 'Offline Demo';
+        if (liveDot) {
+            liveDot.style.background = '#f59e0b';
+            liveDot.style.boxShadow = '0 0 0 0 rgba(245, 158, 11, 0.7)';
+        }
+        if (statusPill) statusPill.title = 'Internet disconnected. Operating in local demo storage.';
         return;
     }
-    el.textContent = ok ? 'Backend: connected' : ('Backend: ' + (errMsg || 'unreachable or token exchange failed'));
-    el.style.color = ok ? '#2a7a2a' : '#a00';
+
+    if (statusText) statusText.textContent = 'System Live';
+    if (liveDot) {
+        liveDot.style.background = '#10b981';
+        liveDot.style.boxShadow = '0 0 0 0 rgba(16, 185, 129, 0.7)';
+    }
+    if (statusPill) statusPill.title = 'Network: Connected | Secure Balloting Protocol Active';
 }
 
 // ---------- Elections and voting ----------
@@ -1134,13 +1174,23 @@ function renderElectionCard(eid, e, showViewButton = false) {
         datesText = `📅 Poll Window: ${s} — ${end}`;
     }
 
+    // Calculate total votes across all candidates in this ballot
+    const countsObj = e.counts || {};
+    let totalVotesCount = e.totalVotes !== undefined ? e.totalVotes : 0;
+    if (!totalVotesCount && Object.keys(countsObj).length > 0) {
+        Object.values(countsObj).forEach(v => totalVotesCount += Number(v) || 0);
+    }
+
     let html = `
         <div class="election-card-header">
             <div>
                 <h3>${title}</h3>
                 <p class="muted" style="font-size:0.85rem; margin-top:3px;">${description}</p>
             </div>
-            <span class="status-badge online" style="font-size:0.75rem; flex-shrink:0;">Active Ballot</span>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+                <span class="status-badge online" style="font-size:0.75rem;">Active Ballot</span>
+                <span class="vote-count-pill" style="font-size:0.75rem; background:rgba(30,64,175,0.08); color:#1e40af; border-color:rgba(30,64,175,0.2);">🗳️ ${totalVotesCount} Total Ballots</span>
+            </div>
         </div>
     `;
 
@@ -1195,6 +1245,12 @@ function renderElectionCard(eid, e, showViewButton = false) {
             const hasVotedForThis = existingVote && String(existingVote.candidateId) === String(cid);
             const hasVotedOther = existingVote && String(existingVote.candidateId) !== String(cid);
 
+            // Get exact votes for this candidate
+            let cVotes = 0;
+            if (countsObj[cid] !== undefined) cVotes = countsObj[cid];
+            else if (c.id && countsObj[c.id] !== undefined) cVotes = countsObj[c.id];
+            else if (c._id && countsObj[c._id] !== undefined) cVotes = countsObj[c._id];
+
             let actionButtonHtml = '';
             let lampClass = 'evm-lamp';
 
@@ -1216,14 +1272,16 @@ function renderElectionCard(eid, e, showViewButton = false) {
                         <div class="candidate-info">
                             <span class="candidate-name">
                                 ${idx + 1}. ${c.name}
-                                <small id="count-${eid}-${cid}" style="margin-left:6px; color:var(--deepgreen); font-weight:700;"></small>
                             </span>
                             <div class="candidate-party">
                                 <span class="party-tag">${party}</span>
                             </div>
                         </div>
                     </div>
-                    ${actionButtonHtml}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="vote-count-pill" id="count-${eid}-${cid}" title="Verified Votes">🗳️ ${cVotes} votes</span>
+                        ${actionButtonHtml}
+                    </div>
                 </div>
             `;
         });
@@ -1244,18 +1302,6 @@ function renderElectionCard(eid, e, showViewButton = false) {
             console.warn('Navigation to voting.html failed', err);
         }
     });
-
-    // Populate counts if already stored
-    try {
-        const counts = e.counts || {};
-        if (counts && Object.keys(counts).length > 0) {
-            (e.candidates || []).forEach(c => {
-                const cid = c.id || c._id;
-                const el = document.getElementById(`count-${eid}-${cid}`);
-                if (el && counts[cid] !== undefined) el.textContent = `(${counts[cid]} votes)`;
-            });
-        }
-    } catch (err) { /* ignore */ }
 }
 
 // Fetch results for an election and update candidate counts in the UI

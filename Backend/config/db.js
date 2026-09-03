@@ -10,6 +10,14 @@ const connectDB = async (mongoUri) => {
 
     await mongoose.connection.db.admin().command({ ping: 1 });
     console.log('✅ Pinged your MongoDB deployment. Connection successful!');
+
+    // Auto-seed initial elections and 4-5 votes if database is currently empty
+    try {
+      const seedDatabase = require('../seed');
+      await seedDatabase(false);
+    } catch (seedErr) {
+      console.warn('[SEED] Auto-seed note:', seedErr.message);
+    }
   } catch (err) {
     // Log the error but do NOT exit the process. Exiting prevents the
     // backend from starting and makes the API unreachable when the DB

@@ -15,8 +15,11 @@ exports.castVote = async (req, res) => {
         if (!election) {
             return res.status(404).json({ message: 'Election not found' });
         }
-        if (!election.isActive || now < election.startDate || now > election.endDate) {
+        if (election.isActive === false) {
             return res.status(400).json({ message: 'This election is not currently active.' });
+        }
+        if (election.endDate && now > new Date(new Date(election.endDate).getTime() + 24*60*60*1000)) {
+            return res.status(400).json({ message: 'Voting for this election has concluded.' });
         }
 
         // 2. Check if the user has already voted
@@ -33,7 +36,12 @@ exports.castVote = async (req, res) => {
         });
         await newVote.save();
 
-        res.status(201).json({ message: 'Vote cast successfully!' });
+        const totalCandidateVotes = await Vote.countDocuments({ election: electionId, candidate: candidateId });
+        res.status(201).json({ 
+            message: 'Vote cast successfully!',
+            candidateId,
+            votes: totalCandidateVotes
+        });
 
     } catch (err) {
         // This will catch the duplicate vote error

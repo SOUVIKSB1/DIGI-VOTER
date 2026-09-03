@@ -10,6 +10,11 @@ htmlcov/
 
 # Environments
 .env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 .venv
 env/
 venv/

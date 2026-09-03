@@ -13,40 +13,48 @@
 </head>
 
 <body>
-    <!-- Global Navbar (Glassmorphic) -->
+    <!-- Global Navbar (Ultra-Clean Glassmorphism) -->
     <nav class="navbar" id="mainNav">
         <div class="nav-container">
+            <!-- Brand -->
             <div class="nav-brand" onclick="switchTestRole('voter')">
-                <span class="brand-icon">🇮🇳</span>
-                <div style="display:flex; flex-direction:column; line-height:1.2;">
-                    <span class="brand-text">DIGI-VOTER</span>
-                    <small style="font-size:0.7rem; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">E-DEMOCRACY PORTAL</small>
+                <div class="brand-crest">
+                    <span>🇮🇳</span>
+                </div>
+                <div class="brand-titles">
+                    <span class="brand-title">DIGI<span class="brand-accent">·</span>VOTER</span>
+                    <span class="brand-sub">National E-Ballot Portal</span>
                 </div>
             </div>
             
-            <!-- TEST ROLE SWITCHER (Instant 1-Click Role Switching) -->
-            <div class="role-switcher-container">
-                <button id="roleBtnVoter" class="role-switch-btn active voter-btn" onclick="switchTestRole('voter')">
+            <!-- INTERACTIVE SLIDING SEGMENTED ROLE SWITCHER -->
+            <div class="glass-role-segmented" id="roleSegmentedControl">
+                <div class="segmented-slider" id="segmentedSlider"></div>
+                <button id="roleBtnVoter" class="segmented-btn active" onclick="switchTestRole('voter')">
                     <span>🗳️</span> Voter Mode
                 </button>
-                <button id="roleBtnAdmin" class="role-switch-btn admin-btn" onclick="switchTestRole('admin')">
+                <button id="roleBtnAdmin" class="segmented-btn" onclick="switchTestRole('admin')">
                     <span>🛡️</span> Admin Mode
                 </button>
             </div>
 
-            <div class="nav-links" id="navLinks">
-                <!-- Active Role Indicator -->
-                <span id="currentRoleBadge" class="role-indicator voter">VOTER MODE</span>
-
-                <!-- Status Indicators -->
-                <div class="nav-status">
-                    <span id="networkStatus" class="status-badge"></span>
-                    <span id="backendStatus" class="status-badge"></span>
+            <!-- Navbar Right Actions -->
+            <div class="nav-actions-group">
+                <!-- Sleek Live Status Pill -->
+                <div class="glass-status-pill" id="systemStatusPill" title="Network & Database Status">
+                    <span class="live-pulse-dot" id="liveDot"></span>
+                    <span id="systemStatusText">System Live</span>
                 </div>
+
+                <!-- Hidden mirrors for compatibility -->
+                <span id="networkStatus" style="display:none;"></span>
+                <span id="backendStatus" style="display:none;"></span>
+                <span id="currentRoleBadge" style="display:none;"></span>
                 
-                <!-- Quick Demo Data Loader -->
-                <button class="btn btn-outline btn-sm" onclick="seedDemoElections()" title="Load rich sample elections for instant testing">
-                    🔄 Reset / Sample Data
+                <!-- Quick Demo Data Action Button -->
+                <button class="btn-glass-action" onclick="seedDemoElections()" title="Reset and seed verified election data">
+                    <span style="color:#eab308; font-size:0.95rem;">⚡</span>
+                    <span>Seed Demo</span>
                 </button>
             </div>
         </div>
@@ -56,16 +64,17 @@
         <!-- ======================================================
              1. VOTER SECTION (Default Landing View)
              ====================================================== -->
-        <section id="voter-section" class="view-section">
+        <section id="voter-section" class="view-section role-switch-anim">
             <!-- Hero Banner -->
-            <div class="hero-banner fade-in">
+            <div class="hero-banner">
                 <div class="hero-content">
                     <h2>Welcome, <span id="voterName" class="highlight-text">Souvik (Voter)</span>!</h2>
-                    <p class="muted">Participate in democratic decision-making. Browse active elections, review candidates, and securely cast your vote.</p>
+                    <p class="muted">Participate in democratic decision-making. Browse constitutional elections, review nominated candidates, and securely cast your secret ballot.</p>
                 </div>
                 <div class="hero-badge-group">
-                    <span class="status-badge online" style="padding: 6px 14px; font-size: 0.85rem;">
-                        🟢 Ballots Open & Verified
+                    <span class="glass-verified-badge">
+                        <span class="live-pulse-dot"></span>
+                        Official Verified Ballot
                     </span>
                 </div>
             </div>
@@ -76,8 +85,8 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="electionSearchInput" placeholder="Search elections, candidates, or constituencies..." oninput="filterElections(this.value)" />
                 </div>
-                <div style="font-size:0.9rem; color:var(--text-muted); font-weight:500;">
-                    Click on any election card for single-election focus mode
+                <div style="font-size:0.88rem; color:var(--text-muted); font-weight:500;">
+                    Click any election card for dedicated full-ballot mode
                 </div>
             </div>
 
@@ -90,16 +99,17 @@
         <!-- ======================================================
              2. ADMIN SECTION (Chief Election Officer Dashboard)
              ====================================================== -->
-        <section id="admin-section" class="view-section" style="display:none;">
+        <section id="admin-section" class="view-section role-switch-anim" style="display:none;">
             <!-- Admin Hero Banner -->
-            <div class="hero-banner fade-in">
+            <div class="hero-banner">
                 <div class="hero-content">
                     <h2>Chief Election Administrator Dashboard</h2>
                     <p class="muted">Manage constitutional elections, enroll candidates, inspect live polling numbers, and oversee registered voters.</p>
                 </div>
                 <div class="hero-badge-group">
-                    <span class="status-badge" style="background:rgba(255,153,51,0.15); color:#d97706; border-color:rgba(255,153,51,0.3); padding:6px 14px; font-size:0.85rem;">
-                        🛡️ Administrator Privileges Active
+                    <span class="glass-verified-badge" style="background:rgba(234,88,12,0.08); border-color:rgba(234,88,12,0.25); color:#c2410c;">
+                        <span class="live-pulse-dot" style="background:#ea580c; box-shadow: 0 0 0 0 rgba(234,88,12,0.7);"></span>
+                        Admin Privileges Active
                     </span>
                 </div>
             </div>

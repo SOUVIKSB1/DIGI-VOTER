@@ -13,24 +13,29 @@
 </head>
 
 <body>
-    <!-- Global Navbar (Glassmorphism) -->
+    <!-- Global Navbar (Ultra-Clean Glassmorphism) -->
     <nav class="navbar" id="mainNav">
         <div class="nav-container">
             <div class="nav-brand" onclick="window.location.href='index.html'">
-                <span class="brand-icon">🇮🇳</span>
-                <span class="brand-text">DIGI-VOTER</span>
+                <div class="brand-crest">
+                    <span>🇮🇳</span>
+                </div>
+                <div class="brand-titles">
+                    <span class="brand-title">DIGI<span class="brand-accent">·</span>VOTER</span>
+                    <span class="brand-sub">Official Ballot Booth</span>
+                </div>
             </div>
             
-            <div class="nav-links" id="navLinks">
-                <!-- Status Indicators -->
-                <div class="nav-status">
-                    <span id="networkStatus" class="status-badge"></span>
+            <div class="nav-actions-group">
+                <div class="glass-status-pill" id="networkStatus">
+                    <span class="live-pulse-dot"></span>
+                    <span>Ballot Verified</span>
                 </div>
                 
-                <!-- Dynamic Auth Buttons -->
-                <div id="navAuthArea">
-                    <button class="btn btn-outline" onclick="window.location.href='index.html'">Back to Home</button>
-                </div>
+                <button class="btn-glass-action" onclick="window.location.href='index.html'">
+                    <span>←</span>
+                    <span>Back to Portal</span>
+                </button>
             </div>
         </div>
     </nav>

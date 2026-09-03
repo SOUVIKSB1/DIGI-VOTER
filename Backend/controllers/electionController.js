@@ -7,10 +7,17 @@ const Vote = require('../models/Vote');
 exports.listAllElections = async (req, res) => {
     try {
         const elections = await Election.find().sort({ createdAt: -1 });
-        // attach candidates for each election so frontend can render them directly
+        // attach candidates and live vote counts for each election
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');
-            return Object.assign({}, e.toObject(), { candidates });
+            const votes = await Vote.find({ election: e._id });
+            const counts = {};
+            candidates.forEach(c => { counts[c._id.toString()] = 0; });
+            votes.forEach(v => {
+                const cid = v.candidate ? v.candidate.toString() : '';
+                counts[cid] = (counts[cid] || 0) + 1;
+            });
+            return Object.assign({}, e.toObject(), { candidates, counts, totalVotes: votes.length });
         }));
         res.json(results);
     } catch (err) {
@@ -22,15 +29,18 @@ exports.listAllElections = async (req, res) => {
 // GET /api/elections/active
 exports.getActiveElections = async (req, res) => {
     try {
-        const now = new Date();
-        const elections = await Election.find({
-            isActive: true,
-            startDate: { $lte: now },
-            endDate: { $gte: now }
-        }).sort({ endDate: 1 });
+        // Return all non-disabled elections so created elections are immediately visible
+        const elections = await Election.find({ isActive: { $ne: false } }).sort({ createdAt: -1 });
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');
-            return Object.assign({}, e.toObject(), { candidates });
+            const votes = await Vote.find({ election: e._id });
+            const counts = {};
+            candidates.forEach(c => { counts[c._id.toString()] = 0; });
+            votes.forEach(v => {
+                const cid = v.candidate ? v.candidate.toString() : '';
+                counts[cid] = (counts[cid] || 0) + 1;
+            });
+            return Object.assign({}, e.toObject(), { candidates, counts, totalVotes: votes.length });
         }));
         res.json(results);
     } catch (err) {
@@ -40,18 +50,25 @@ exports.getActiveElections = async (req, res) => {
 };
 
 // GET /api/elections/:electionId
-// **THIS FUNCTION SHOWS CANDIDATES**
 exports.getElectionDetails = async (req, res) => {
     try {
-        const { electionId } = req.params; // **FIXED**
+        const { electionId } = req.params;
         const election = await Election.findById(electionId);
         if (!election) {
             return res.status(404).json({ message: 'Election not found' });
         }
-        const candidates = await Candidate.find({ election: electionId });
+        const candidates = await Candidate.find({ election: electionId }).select('_id name party');
+        const votes = await Vote.find({ election: electionId });
+        const counts = {};
+        candidates.forEach(c => { counts[c._id.toString()] = 0; });
+        votes.forEach(v => {
+            const cid = v.candidate ? v.candidate.toString() : '';
+            counts[cid] = (counts[cid] || 0) + 1;
+        });
         res.json({
-            election: election,
-            candidates: candidates
+            election: Object.assign({}, election.toObject(), { counts, totalVotes: votes.length }),
+            candidates: candidates,
+            counts: counts
         });
     } catch (err) {
         console.error(err.message);

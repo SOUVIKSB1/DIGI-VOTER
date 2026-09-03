@@ -18,9 +18,21 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/elections', require('./routes/elections'));
 app.use('/api/admin', require('./routes/admin'));
 
+// Seed endpoint for manual or frontend trigger
+app.all('/api/seed', async (req, res) => {
+    try {
+        const seedDatabase = require('./seed');
+        const forceReset = req.query.reset === 'true' || req.body?.reset === true;
+        const result = await seedDatabase(forceReset);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // basic root
-app.get('/api', (req, res) => res.send('OVMS API running'));
-app.get('/api/', (req, res) => res.send('OVMS API running'));
+app.get('/api', (req, res) => res.send('DIGI-VOTER API running'));
+app.get('/api/', (req, res) => res.send('DIGI-VOTER API running'));
 
 // Serve Frontend static assets if directory exists
 const frontendDir = path.join(__dirname, '../Frontend');
