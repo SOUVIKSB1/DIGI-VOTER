@@ -1475,7 +1475,9 @@ window.showToast = function(message, type = 'success') {
     if (!container) return;
     const t = document.createElement('div');
     t.className = `ovms-toast ${type}`;
-    t.innerHTML = `<strong>${type === 'success' ? '✔' : '⚠'}</strong> ${message}`;
+    const cleanMsg = String(message).replace(/^[✔⚠ℹ️⚡ ]+/, '').trim();
+    const icon = type === 'success' ? '✔' : (type === 'error' ? '⚠' : 'ℹ');
+    t.innerHTML = `<strong>${icon}</strong> ${cleanMsg}`;
     container.appendChild(t);
     setTimeout(() => {
         t.style.opacity = '0';
@@ -1517,6 +1519,20 @@ window.closeEvmModal = function() {
 window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendElection) {
     const cName = decodeURIComponent(cNameEnc);
     const party = decodeURIComponent(partyEnc);
+
+    // 0. Double-check local double-voting lock before performing animation
+    const localUser = JSON.parse(localStorage.getItem('localUser') || 'null');
+    if (!localUser || !localUser.email) {
+        if (typeof showToast === 'function') showToast('Please authenticate as a registered elector to vote.', 'error');
+        if (window.openVoterAuthModal) window.openVoterAuthModal('login');
+        return;
+    }
+    const localVotes = JSON.parse(localStorage.getItem('localVotes') || '[]');
+    if (localVotes.some(v => v.userEmail === localUser.email && String(v.electionId) === String(eid))) {
+        if (typeof showToast === 'function') showToast('You have already voted in this election.', 'error');
+        else alert('You have already voted in this election.');
+        return;
+    }
 
     // 1. Double-check functional dates
     const elections = getLocalElections();
@@ -1568,14 +1584,24 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
 
     if (modal) modal.style.display = 'flex';
 
-    // 4. Submit vote via backend
+    // 4. Submit vote via backend or local (silent mode to prevent conflicting toasts)
+    let voteResult = null;
     if (isBackendElection) {
-        window.voteBackend(eid, cid);
+        voteResult = await window.voteBackend(eid, cid, true);
     } else {
-        window.vote(eid, cid);
+        voteResult = await window.vote(eid, cid, true);
     }
 
-    // 5. After 1.2s: EVM Confirmation Beep + Slip Drops into VVPAT Box + Indelible Ink Confirmation Shown
+    // 5. If vote failed (e.g. backend reported already voted)
+    if (!voteResult || !voteResult.success) {
+        if (modal) modal.style.display = 'none';
+        const failMsg = (voteResult && voteResult.message) ? voteResult.message : 'You have already voted in this election.';
+        if (typeof showToast === 'function') showToast(failMsg, 'error');
+        else alert(failMsg);
+        return;
+    }
+
+    // 6. On Successful Ballot: EVM Confirmation Beep + Slip Drops into VVPAT Box + Indelible Ink Confirmation Shown
     setTimeout(() => {
         if (slip) slip.classList.add('dropped');
         if (lampLed) lampLed.className = 'evm-lamp-led recorded'; // Solid Green
@@ -1585,11 +1611,11 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
         playEvmBeep();
 
         if (typeof showToast === 'function') {
-            showToast(`✔ Official Ballot Cast for ${cName} (${party})! Indelible ink stamped.`, 'success');
+            showToast(`Official Ballot Cast for ${cName} (${party})! Indelible ink stamped.`, 'success');
         }
     }, 1200);
 
-    // 6. Smooth fallback auto-close after 6.5s if user hasn't clicked return
+    // 7. Smooth fallback auto-close after 6.5s if user hasn't clicked return
     setTimeout(() => {
         if (modal && modal.style.display === 'flex') {
             window.closeEvmModal();
@@ -2165,38 +2191,16 @@ function refreshCurrentView(electionId) {
 }
 
 // vote with double-vote protection per election (best-effort offline)
-window.vote = async function vote(electionId, candidateId) {
-    // determine identity
-    if (firebaseAvailable && auth && auth.currentUser) {
-        try {
-            const user = auth.currentUser;
-            const votesRef = firestoreModule.collection(db, 'votes');
-            const q = firestoreModule.query(votesRef, firestoreModule.where('userId', '==', user.uid), firestoreModule.where('electionId', '==', electionId));
-            const qSnap = await firestoreModule.getDocs(q);
-            if (!qSnap.empty) return alert('You have already voted in this election.');
-
-            await firestoreModule.addDoc(firestoreModule.collection(db, 'votes'), { userId: user.uid, electionId, candidateId, timestamp: Date.now() });
-            // increment counts if possible
-            try { await firestoreModule.updateDoc(firestoreModule.doc(db, 'elections', electionId), { [`counts.${candidateId}`]: firestoreModule.increment(1) }); } catch (e) { /* ignore */ }
-            // emit a cross-window event so voting pages can show a toast
-            try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: 'Vote submitted. Thank you.' } })); } catch (e) { }
-            alert('Vote submitted. Thank you.');
-            refreshCurrentView(electionId); // **FIXED:** Call correct refresh
-            return;
-        } catch (err) {
-            console.error(err);
-            alert('Vote error: ' + (err.message || err));
-            return;
-        }
-    }
-
+window.vote = async function vote(electionId, candidateId, silent = false) {
     // Check local double-voting lock
     const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
     const votes = JSON.parse(localStorage.getItem('localVotes') || '[]');
     if (votes.find(v => v.userEmail === localUser.email && String(v.electionId) === String(electionId))) {
-        if (typeof showToast === 'function') showToast('You have already cast a ballot in this election.', 'error');
-        else alert('You have already cast a ballot in this election.');
-        return;
+        if (!silent) {
+            if (typeof showToast === 'function') showToast('You have already voted in this election.', 'error');
+            else alert('You have already voted in this election.');
+        }
+        return { success: false, message: 'You have already voted in this election.' };
     }
 
     const voteObj = { userEmail: localUser.email, electionId, candidateId, timestamp: Date.now(), synced: true };
@@ -2221,13 +2225,16 @@ window.vote = async function vote(electionId, candidateId) {
 
     const successMsg = 'Official ballot cast successfully! 🗳️ Indelible mark recorded.';
     try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: successMsg } })); } catch (e) { }
-    if (typeof showToast === 'function') showToast(successMsg, 'success');
-    else alert(successMsg);
+    if (!silent) {
+        if (typeof showToast === 'function') showToast(successMsg, 'success');
+        else alert(successMsg);
+    }
     refreshCurrentView(electionId);
+    return { success: true, message: successMsg };
 };
 
 // Vote against backend API
-window.voteBackend = async function voteBackend(electionId, candidateId) {
+window.voteBackend = async function voteBackend(electionId, candidateId, silent = false) {
     try {
         const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
         let backendToken = localStorage.getItem('backendToken');
@@ -2263,8 +2270,10 @@ window.voteBackend = async function voteBackend(electionId, candidateId) {
             // Lock double-voting in session
             const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
             const votes = JSON.parse(localStorage.getItem('localVotes') || '[]');
-            votes.push({ userEmail: localUser.email, electionId, candidateId, timestamp: Date.now() });
-            localStorage.setItem('localVotes', JSON.stringify(votes));
+            if (!votes.some(v => v.userEmail === localUser.email && String(v.electionId) === String(electionId))) {
+                votes.push({ userEmail: localUser.email, electionId, candidateId, timestamp: Date.now() });
+                localStorage.setItem('localVotes', JSON.stringify(votes));
+            }
 
             const countEl = document.getElementById(`count-${electionId}-${candidateId}`);
             if (countEl && data.votes !== undefined) {
@@ -2274,17 +2283,23 @@ window.voteBackend = async function voteBackend(electionId, candidateId) {
             if (lamp) lamp.className = 'evm-lamp voted';
 
             try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: msg } })); } catch (e) { }
-            if (typeof showToast === 'function') showToast(msg, 'success');
-            else alert(msg);
+            if (!silent) {
+                if (typeof showToast === 'function') showToast(msg, 'success');
+                else alert(msg);
+            }
             refreshCurrentView(electionId);
+            return { success: true, message: msg };
         } else {
-            const msg = data.message || 'Vote could not be processed';
-            if (typeof showToast === 'function') showToast(msg, 'error');
-            else alert(msg);
+            const msg = data.message || 'You have already voted in this election.';
+            if (!silent) {
+                if (typeof showToast === 'function') showToast(msg, 'error');
+                else alert(msg);
+            }
+            return { success: false, message: msg };
         }
     } catch (err) {
         console.warn('Backend vote network fallback', err);
-        return window.vote(electionId, candidateId);
+        return window.vote(electionId, candidateId, silent);
     }
 };
 
