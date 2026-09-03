@@ -2,182 +2,238 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Bharat Vote 🇮🇳 — Online Voting Management System</title>
+    <title>Bharat Vote 🇮🇳 — Online Voting & Election Management</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     
     <!-- Modern Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Enhanced CSS -->
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <!-- Global Navbar (Glassmorphism) -->
+    <!-- Global Navbar (Glassmorphic) -->
     <nav class="navbar" id="mainNav">
         <div class="nav-container">
-            <div class="nav-brand" onclick="goHome()">
+            <div class="nav-brand" onclick="switchTestRole('voter')">
                 <span class="brand-icon">🇮🇳</span>
-                <span class="brand-text">Bharat Vote</span>
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                    <span class="brand-text">Bharat Vote</span>
+                    <small style="font-size:0.7rem; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">E-DEMOCRACY PORTAL</small>
+                </div>
             </div>
             
+            <!-- TEST ROLE SWITCHER (Instant 1-Click Role Switching) -->
+            <div class="role-switcher-container">
+                <button id="roleBtnVoter" class="role-switch-btn active voter-btn" onclick="switchTestRole('voter')">
+                    <span>🗳️</span> Voter Mode
+                </button>
+                <button id="roleBtnAdmin" class="role-switch-btn admin-btn" onclick="switchTestRole('admin')">
+                    <span>🛡️</span> Admin Mode
+                </button>
+            </div>
+
             <div class="nav-links" id="navLinks">
+                <!-- Active Role Indicator -->
+                <span id="currentRoleBadge" class="role-indicator voter">VOTER MODE</span>
+
                 <!-- Status Indicators -->
                 <div class="nav-status">
                     <span id="networkStatus" class="status-badge"></span>
                     <span id="backendStatus" class="status-badge"></span>
                 </div>
                 
-                <!-- Dynamic Auth Buttons -->
-                <div id="navAuthArea">
-                    <button id="adminBtn" class="btn btn-outline" style="display:none;" onclick="goAdmin()">Admin Panel</button>
-                    <button class="btn btn-primary" onclick="showAuthSection()">Login</button>
-                </div>
+                <!-- Quick Demo Data Loader -->
+                <button class="btn btn-outline btn-sm" onclick="seedDemoElections()" title="Load rich sample elections for instant testing">
+                    🔄 Reset / Sample Data
+                </button>
             </div>
         </div>
     </nav>
 
     <main class="app-main fade" id="appMain">
-        <!-- 1. AUTH SECTION -->
-        <section id="auth-section" class="view-section">
-            <div class="auth-card glass-panel fade-in">
-                <div class="auth-header">
-                    <h2>Welcome to Bharat Vote</h2>
-                    <p class="muted">Secure Online Voting Management System</p>
+        <!-- ======================================================
+             1. VOTER SECTION (Default Landing View)
+             ====================================================== -->
+        <section id="voter-section" class="view-section">
+            <!-- Hero Banner -->
+            <div class="hero-banner fade-in">
+                <div class="hero-content">
+                    <h2>Welcome, <span id="voterName" class="highlight-text">Souvik (Voter)</span>!</h2>
+                    <p class="muted">Participate in democratic decision-making. Browse active elections, review candidates, and securely cast your vote.</p>
                 </div>
-
-                <!-- Login Form -->
-                <div id="loginForm">
-                    <div class="form-group">
-                        <input id="loginEmail" class="input-field" type="email" placeholder="Email Address" required />
-                    </div>
-                    <div class="form-group">
-                        <input id="loginPassword" class="input-field" type="password" placeholder="Password" required />
-                    </div>
-                    <button class="btn btn-primary full-width" onclick="login()">Login</button>
-                    
-                    <div class="divider"><span>OR</span></div>
-                    
-                    <button id="googleSignInBtn" class="btn btn-outline full-width" onclick="googleSignIn()">
-                        Sign In with Google
-                    </button>
-                </div>
-
-                <div class="subtle-hr"></div>
-
-                <!-- Register Form -->
-                <div class="auth-header" style="margin-bottom: 1rem;">
-                    <h3>Create New Account</h3>
-                    <p class="muted">Register as a voter</p>
-                </div>
-                <div id="registerForm" class="register-group">
-                    <input id="regName" class="input-field" type="text" placeholder="Full Name" required />
-                    <input id="regEmail" class="input-field" type="email" placeholder="Email Address" required />
-                    <input id="regPassword" class="input-field" type="password" placeholder="Create Password" required />
-                    <button class="btn btn-secondary full-width" onclick="register()">Register as Voter</button>
+                <div class="hero-badge-group">
+                    <span class="status-badge online" style="padding: 6px 14px; font-size: 0.85rem;">
+                        🟢 Ballots Open & Verified
+                    </span>
                 </div>
             </div>
-        </section>
 
-        <!-- 2. VOTER SECTION -->
-        <section id="voter-section" class="view-section" style="display:none;">
-            <div class="dashboard-header fade-in">
-                <h2>Welcome, <span id="voterName" class="highlight-text">Voter</span>!</h2>
-                <p class="muted">Active elections available for voting.</p>
+            <!-- Search & Filter Bar -->
+            <div class="filter-bar">
+                <div class="search-input-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="electionSearchInput" placeholder="Search elections, candidates, or constituencies..." oninput="filterElections(this.value)" />
+                </div>
+                <div style="font-size:0.9rem; color:var(--text-muted); font-weight:500;">
+                    Click on any election card for single-election focus mode
+                </div>
             </div>
 
-            <!-- Active Elections Grid -->
-            <div id="elections" class="elections-grid mt-4">
+            <!-- Elections Grid -->
+            <div id="elections" class="elections-grid">
                 <p>Loading election data...</p>
             </div>
         </section>
 
-        <!-- 3. ADMIN SECTION -->
+        <!-- ======================================================
+             2. ADMIN SECTION (Chief Election Officer Dashboard)
+             ====================================================== -->
         <section id="admin-section" class="view-section" style="display:none;">
-            <div class="dashboard-header">
-                <h2>Admin Dashboard</h2>
-                <p class="muted">Manage elections, candidates, voters, and view real-time participation analytics.</p>
+            <!-- Admin Hero Banner -->
+            <div class="hero-banner fade-in">
+                <div class="hero-content">
+                    <h2>Chief Election Administrator Dashboard</h2>
+                    <p class="muted">Manage constitutional elections, enroll candidates, inspect live polling numbers, and oversee registered voters.</p>
+                </div>
+                <div class="hero-badge-group">
+                    <span class="status-badge" style="background:rgba(255,153,51,0.15); color:#d97706; border-color:rgba(255,153,51,0.3); padding:6px 14px; font-size:0.85rem;">
+                        🛡️ Administrator Privileges Active
+                    </span>
+                </div>
             </div>
 
             <div class="admin-dashboard-layout">
-                <!-- Sidebar -->
+                <!-- Sidebar Tabs -->
                 <aside class="admin-sidebar glass-panel">
-                    <h3>Admin Menu</h3>
+                    <h3>Administrative Navigation</h3>
                     <nav class="admin-nav">
-                        <a href="javascript:void(0)" class="admin-tab active" onclick="showAdminTab('manageElections')">Manage Elections</a>
-                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('createElection')">Create Election</a>
-                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('addCandidate')">Add Candidate</a>
-                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('analytics')">Analytics</a>
-                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('voters')">Manage Voters</a>
+                        <a href="javascript:void(0)" class="admin-tab active" onclick="showAdminTab('manageElections')">
+                            🗳️ Manage Elections
+                        </a>
+                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('createElection')">
+                            ➕ Create New Election
+                        </a>
+                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('addCandidate')">
+                            👤 Add Candidate
+                        </a>
+                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('analytics')">
+                            📊 Participation Analytics
+                        </a>
+                        <a href="javascript:void(0)" class="admin-tab" onclick="showAdminTab('voters')">
+                            👥 Manage Voters
+                        </a>
                     </nav>
                 </aside>
 
-                <!-- Admin Tab Content Area -->
+                <!-- Tab Content Area -->
                 <div class="admin-content glass-panel">
-                    <!-- Manage Elections Tab -->
+                    <!-- Tab 1: Manage Elections -->
                     <div id="tab-manageElections" class="admin-tab-pane">
-                        <h3>Active & Scheduled Elections</h3>
-                        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:1.2rem;">
+                            <div>
+                                <h3>Scheduled & Active Elections</h3>
+                                <p class="muted">Manage live election statuses, edit details, or inspect real-time results.</p>
+                            </div>
                             <div class="quick-delete-bar">
-                                <input id="deleteElectionId" class="input-field" placeholder="Election ID to Delete" />
-                                <button class="btn btn-danger" onclick="deleteElectionById()">Delete Election</button>
+                                <input id="deleteElectionId" class="input-field" placeholder="Election ID to Delete" style="padding:8px 12px; font-size:0.85rem;" />
+                                <button class="btn btn-danger btn-sm" onclick="deleteElectionById()">Delete</button>
                             </div>
                         </div>
                         <div id="adminElectionsList" class="elections-grid mt-3"></div>
                     </div>
 
-                    <!-- Create Election Tab -->
+                    <!-- Tab 2: Create Election -->
                     <div id="tab-createElection" class="admin-tab-pane" style="display:none;">
                         <h3>Create New Election</h3>
+                        <p class="muted">Configure a new election event with start and end dates.</p>
                         <div class="form-card mt-3">
                             <div class="form-group">
-                                <label class="input-label">Title <input id="title" class="input-field" placeholder="Election Title" required /></label>
+                                <label class="input-label">Election Title 
+                                    <input id="title" class="input-field" placeholder="e.g. Lok Sabha 2026 — Varanasi Parliamentary Constituency" required />
+                                </label>
                             </div>
                             <div class="form-group">
-                                <label class="input-label">Description <textarea id="desc" class="input-field" rows="3" placeholder="Election Description"></textarea></label>
+                                <label class="input-label">Description
+                                    <textarea id="desc" class="input-field" rows="3" placeholder="Describe the office, constituency, and electoral rules"></textarea>
+                                </label>
                             </div>
                             <div class="form-grid">
-                                <label class="input-label">Start Date <input id="start" type="date" class="input-field" /></label>
-                                <label class="input-label">End Date <input id="end" type="date" class="input-field" /></label>
+                                <label class="input-label">Start Date 
+                                    <input id="start" type="date" class="input-field" />
+                                </label>
+                                <label class="input-label">End Date 
+                                    <input id="end" type="date" class="input-field" />
+                                </label>
                             </div>
-                            <button class="btn btn-primary mt-4" onclick="createElection()">Create Election</button>
+                            <button class="btn btn-primary mt-4" onclick="createElection()">
+                                🚀 Publish & Activate Election
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Add Candidate Tab -->
+                    <!-- Tab 3: Add Candidate -->
                     <div id="tab-addCandidate" class="admin-tab-pane" style="display:none;">
-                        <h3>Add Candidate</h3>
+                        <h3>Add Candidate to Election</h3>
+                        <p class="muted">Enroll a nominated candidate into an existing election ballot.</p>
                         <div class="form-card mt-3">
                             <div class="form-group">
-                                <label class="input-label">Election ID <input id="elId" class="input-field" placeholder="Election ID" required /></label>
+                                <label class="input-label">Target Election ID 
+                                    <input id="elId" class="input-field" placeholder="Paste Election ID from the Manage Elections tab" required />
+                                </label>
                             </div>
                             <div class="form-grid">
-                                <label class="input-label">Candidate Name <input id="cName" class="input-field" placeholder="Candidate Full Name" required /></label>
-                                <label class="input-label">Party / Affiliation <input id="party" class="input-field" placeholder="Political Party" /></label>
+                                <label class="input-label">Candidate Full Name 
+                                    <input id="cName" class="input-field" placeholder="e.g. Narendra Modi / Rahul Gandhi" required />
+                                </label>
+                                <label class="input-label">Political Party Affiliation 
+                                    <input id="party" class="input-field" placeholder="e.g. Bharatiya Janata Party (BJP)" />
+                                </label>
                             </div>
-                            <button class="btn btn-secondary mt-4" onclick="addCandidate()">Add Candidate</button>
+                            <button class="btn btn-secondary mt-4" onclick="addCandidate()">
+                                ➕ Enroll Candidate
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Analytics Tab -->
+                    <!-- Tab 4: Analytics -->
                     <div id="tab-analytics" class="admin-tab-pane" style="display:none;">
-                        <h3>Election Analytics & Participation</h3>
-                        <div id="analyticsBox" class="analytics-grid mt-3"></div>
+                        <h3>Election Participation Analytics</h3>
+                        <p class="muted">Live electoral engagement numbers from across the voting system.</p>
+                        <div id="analyticsBox" class="analytics-grid mt-3">
+                            <div class="stat-card">
+                                <div class="stat-val">3</div>
+                                <div class="stat-lbl">Active Elections</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-val">9</div>
+                                <div class="stat-lbl">Enrolled Candidates</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-val">484</div>
+                                <div class="stat-lbl">Total Ballots Cast</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Voters Tab -->
+                    <!-- Tab 5: Voters -->
                     <div id="tab-voters" class="admin-tab-pane" style="display:none;">
-                        <h3>Registered Voters</h3>
-                        <div id="votersBox" class="mt-3"></div>
+                        <h3>Registered Electoral Roll</h3>
+                        <p class="muted">View and manage registered voter profiles.</p>
+                        <div id="votersBox" class="voters-list mt-3">
+                            <p>Loading electoral roll...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Toast container for notifications -->
+    <!-- Toast Notification Container -->
     <div id="ovms-toast-container"></div>
 
+    <!-- Main Logic Script -->
     <script type="module" src="script.js"></script>
     <script>
         // Page animation fade-in
@@ -187,7 +243,7 @@
             if (main) main.style.opacity = 1;
         });
 
-        // Admin tab navigation
+        // Admin Tab Controller
         window.showAdminTab = function(tabName) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.admin-tab-pane').forEach(p => p.style.display = 'none');
@@ -203,28 +259,28 @@
             if (tabName === 'manageElections' && window.loadElections) window.loadElections();
         };
 
-        // Toast logic
+        // Toast Notification System
         function showToast(message, type = 'success') {
             const container = document.getElementById('ovms-toast-container');
             if (!container) return;
             const t = document.createElement('div');
             t.className = `ovms-toast ${type}`;
-            t.textContent = message;
+            t.innerHTML = `<strong>${type === 'success' ? '✔' : '⚠'}</strong> ${message}`;
             container.appendChild(t);
             setTimeout(() => {
                 t.style.opacity = '0';
                 t.style.transform = 'translateY(-10px)';
                 setTimeout(() => t.remove(), 300);
-            }, 3000);
+            }, 3500);
         }
 
         window.addEventListener('vote:success', (e) => {
-            const msg = (e && e.detail && e.detail.message) ? e.detail.message : 'Vote succeeded';
+            const msg = (e && e.detail && e.detail.message) ? e.detail.message : 'Vote successfully submitted!';
             showToast(msg, 'success');
         });
 
         window.addEventListener('vote:error', (e) => {
-            const msg = (e && e.detail && e.detail.message) ? e.detail.message : 'Vote failed';
+            const msg = (e && e.detail && e.detail.message) ? e.detail.message : 'Unable to record vote.';
             showToast(msg, 'error');
         });
     </script>

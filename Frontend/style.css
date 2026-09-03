@@ -177,6 +177,147 @@
        align-items: center;
        gap: 10px;
    }
+      /* ======================================================
+       ROLE SWITCHER & TEST CONTROLS (User Friendly)
+       ====================================================== */
+    .role-switcher-container {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: var(--radius-pill);
+        padding: 3px;
+        gap: 2px;
+    }
+    
+    .role-switch-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-heading);
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: var(--radius-pill);
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .role-switch-btn:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .role-switch-btn.active.voter-btn {
+        background: var(--deepgreen);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(19, 136, 8, 0.35);
+    }
+    
+    .role-switch-btn.active.admin-btn {
+        background: var(--saffron);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(255, 153, 51, 0.35);
+    }
+
+    .role-indicator {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 3px 8px;
+        border-radius: var(--radius-pill);
+        text-transform: uppercase;
+    }
+    .role-indicator.voter { background: rgba(19, 136, 8, 0.12); color: var(--deepgreen); border: 1px solid rgba(19, 136, 8, 0.25); }
+    .role-indicator.admin { background: rgba(255, 153, 51, 0.15); color: #d97706; border: 1px solid rgba(255, 153, 51, 0.3); }
+
+    /* Hero Banner */
+    .hero-banner {
+        padding: 1.8rem 2rem;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.65) 100%);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+    }
+
+    .hero-content h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+
+    .hero-badge-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-input-box {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-input-box input {
+        width: 100%;
+        padding: 10px 16px 10px 38px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .search-input-box input:focus {
+        border-color: var(--saffron);
+        box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.15);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+
+    .party-tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--radius-sm);
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+    }
    
    /* ======================================================
       MAIN LAYOUT & GLASS PANELS

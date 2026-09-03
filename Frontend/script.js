@@ -18,26 +18,150 @@ function getElectionsDiv() {
     return document.getElementById('elections'); 
 }
 
-// SPA Navigation Helpers
-window.goHome = function() {
-    if(window.auth && window.auth.currentUser) {
-        showVoterSectionFromFirebase(window.auth.currentUser);
+// SPA Navigation & Role Switching Helpers
+window.switchTestRole = function(role) {
+    console.log('[ROLE SWITCHER] Switching to role:', role);
+    localStorage.setItem('ovmsActiveRole', role);
+
+    const voterBtn = document.getElementById('roleBtnVoter');
+    const adminBtn = document.getElementById('roleBtnAdmin');
+    const roleIndicator = document.getElementById('currentRoleBadge');
+
+    if (role === 'admin') {
+        const adminUser = {
+            id: 'admin-test-01',
+            name: 'Chief Election Admin',
+            email: 'rajarshighs1@gmail.com',
+            role: 'admin'
+        };
+        localStorage.setItem('localUser', JSON.stringify(adminUser));
+        localStorage.setItem('backendUser', JSON.stringify(adminUser));
+        if (!localStorage.getItem('backendToken')) {
+            localStorage.setItem('backendToken', 'mock-admin-token-2026');
+        }
+
+        if (voterBtn) voterBtn.classList.remove('active');
+        if (adminBtn) adminBtn.classList.add('active');
+        if (roleIndicator) {
+            roleIndicator.textContent = 'ADMIN MODE';
+            roleIndicator.className = 'role-indicator admin';
+        }
+
+        if (authSection) authSection.style.display = 'none';
+        if (voterSection) voterSection.style.display = 'none';
+        if (adminSection) adminSection.style.display = 'block';
+
+        if (window.showAdminTab) window.showAdminTab('manageElections');
+        if (window.loadElections) window.loadElections();
+        if (window.loadAnalytics) window.loadAnalytics();
     } else {
-        const raw = localStorage.getItem('backendUser');
-        const lu = localStorage.getItem('localUser');
-        if(raw) showVoterSectionLocal(JSON.parse(raw));
-        else if(lu) showVoterSectionLocal(JSON.parse(lu));
-        else showAuthSection();
+        const voterUser = {
+            id: 'voter-test-01',
+            name: 'Souvik (Voter)',
+            email: 'voter@bharatvote.in',
+            role: 'user'
+        };
+        localStorage.setItem('localUser', JSON.stringify(voterUser));
+        localStorage.setItem('backendUser', JSON.stringify(voterUser));
+        if (!localStorage.getItem('backendToken')) {
+            localStorage.setItem('backendToken', 'mock-voter-token-2026');
+        }
+
+        if (adminBtn) adminBtn.classList.remove('active');
+        if (voterBtn) voterBtn.classList.add('active');
+        if (roleIndicator) {
+            roleIndicator.textContent = 'VOTER MODE';
+            roleIndicator.className = 'role-indicator voter';
+        }
+
+        if (authSection) authSection.style.display = 'none';
+        if (adminSection) adminSection.style.display = 'none';
+        if (voterSection) voterSection.style.display = 'block';
+
+        const nameSpan = document.getElementById('voterName');
+        if (nameSpan) nameSpan.textContent = voterUser.name;
+
+        if (window.loadElections) window.loadElections();
     }
 };
 
+window.goHome = function() {
+    window.switchTestRole('voter');
+};
+
 window.goAdmin = function() {
-    authSection.style.display = 'none';
-    voterSection.style.display = 'none';
-    adminSection.style.display = 'block';
-    
-    // Default to elections tab
-    if(window.showAdminTab) window.showAdminTab('manageElections');
+    window.switchTestRole('admin');
+};
+
+window.seedDemoElections = function() {
+    const sample = [
+        {
+            id: 'ls-2026-varanasi',
+            title: 'Lok Sabha General Election — Varanasi Constituency',
+            description: 'Constituency No. 77, Parliamentary General Election for Member of Parliament.',
+            startDate: '2026-04-01',
+            endDate: '2026-06-01',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-modi', name: 'Narendra Modi', party: 'Bharatiya Janata Party (BJP)' },
+                { id: 'c-rai', name: 'Ajay Rai', party: 'Indian National Congress (INC)' },
+                { id: 'c-lari', name: 'Athar Jamal Lari', party: 'Bahujan Samaj Party (BSP)' }
+            ],
+            counts: { 'c-modi': 142, 'c-rai': 98, 'c-lari': 24 }
+        },
+        {
+            id: 'delhi-assembly-2026',
+            title: 'Delhi Legislative Assembly — New Delhi Constituency',
+            description: 'State Legislative Assembly election for representation in Vidhan Sabha.',
+            startDate: '2026-02-15',
+            endDate: '2026-05-15',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-kejriwal', name: 'Arvind Kejriwal', party: 'Aam Aadmi Party (AAP)' },
+                { id: 'c-yadav', name: 'Sunil Yadav', party: 'Bharatiya Janata Party (BJP)' },
+                { id: 'c-sabharwal', name: 'Romesh Sabharwal', party: 'Indian National Congress (INC)' }
+            ],
+            counts: { 'c-kejriwal': 85, 'c-yadav': 67, 'c-sabharwal': 19 }
+        },
+        {
+            id: 'student-council-2026',
+            title: 'National University Student Council Presidential Election',
+            description: 'Annual election for the President of the Central University Student Council.',
+            startDate: '2026-03-01',
+            endDate: '2026-03-31',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-priya', name: 'Priya Sharma', party: 'Progressive Students Union' },
+                { id: 'c-rahul', name: 'Rahul Verma', party: 'United Youth Alliance' },
+                { id: 'c-ananya', name: 'Ananya Roy', party: 'Independent Youth Voice' }
+            ],
+            counts: { 'c-priya': 52, 'c-rahul': 48, 'c-ananya': 22 }
+        }
+    ];
+    localStorage.setItem('localElections', JSON.stringify(sample));
+    if (typeof showToast === 'function') {
+        showToast('Sample elections successfully loaded!', 'success');
+    } else {
+        alert('Sample elections successfully loaded!');
+    }
+    if (window.loadElections) window.loadElections();
+    if (window.loadAnalytics) window.loadAnalytics();
+};
+
+window.filterElections = function(query) {
+    const q = (query || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.election-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (!q || text.includes(q)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
 };
 
 
@@ -428,16 +552,6 @@ function showVoterSectionLocal(user) {
     console.log('[showVoterSectionLocal] Role badge called successfully');
     
     if (window.loadElections) loadElections();
-    
-    // Auto refresh page 2 seconds after login (only once per session)
-    if (!sessionStorage.getItem('hasRefreshedAfterLogin')) {
-        sessionStorage.setItem('hasRefreshedAfterLogin', 'true');
-        console.log('[showVoterSectionLocal] Scheduling auto-refresh after 2 seconds');
-        setTimeout(() => {
-            console.log('[showVoterSectionLocal] Auto-refreshing page...');
-            location.reload();
-        }, 2000);
-    }
 }
 // Ensure admin button reflects persisted session or known owner emails
 function updateAdminButtonFromStorage() {
@@ -564,13 +678,61 @@ async function showVoterSectionFromFirebase(user) {
 
 // navigate to admin page (Handled by goAdmin SPA helper above)
 
-// ---------- Local storage helpers (demo/offline mode) ----------
 function getLocalElections() {
     const raw = localStorage.getItem('localElections');
-    if (raw) return JSON.parse(raw);
-    // default sample election for offline demo
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch(e) {}
+    }
+    // Rich realistic sample elections for instant testing & offline demo
     const sample = [
-        { id: 'demo-1', title: 'Student Council President', description: 'Vote for your president', candidates: [{ id: 'c1', name: 'Alice' }, { id: 'c2', name: 'Bob' }], counts: { c1: 0, c2: 0 } }
+        {
+            id: 'ls-2026-varanasi',
+            title: 'Lok Sabha General Election — Varanasi Constituency',
+            description: 'Constituency No. 77, Parliamentary General Election for Member of Parliament.',
+            startDate: '2026-04-01',
+            endDate: '2026-06-01',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-modi', name: 'Narendra Modi', party: 'Bharatiya Janata Party (BJP)' },
+                { id: 'c-rai', name: 'Ajay Rai', party: 'Indian National Congress (INC)' },
+                { id: 'c-lari', name: 'Athar Jamal Lari', party: 'Bahujan Samaj Party (BSP)' }
+            ],
+            counts: { 'c-modi': 142, 'c-rai': 98, 'c-lari': 24 }
+        },
+        {
+            id: 'delhi-assembly-2026',
+            title: 'Delhi Legislative Assembly — New Delhi Constituency',
+            description: 'State Legislative Assembly election for representation in Vidhan Sabha.',
+            startDate: '2026-02-15',
+            endDate: '2026-05-15',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-kejriwal', name: 'Arvind Kejriwal', party: 'Aam Aadmi Party (AAP)' },
+                { id: 'c-yadav', name: 'Sunil Yadav', party: 'Bharatiya Janata Party (BJP)' },
+                { id: 'c-sabharwal', name: 'Romesh Sabharwal', party: 'Indian National Congress (INC)' }
+            ],
+            counts: { 'c-kejriwal': 85, 'c-yadav': 67, 'c-sabharwal': 19 }
+        },
+        {
+            id: 'student-council-2026',
+            title: 'National University Student Council Presidential Election',
+            description: 'Annual election for the President of the Central University Student Council.',
+            startDate: '2026-03-01',
+            endDate: '2026-03-31',
+            isActive: true,
+            active: true,
+            candidates: [
+                { id: 'c-priya', name: 'Priya Sharma', party: 'Progressive Students Union' },
+                { id: 'c-rahul', name: 'Rahul Verma', party: 'United Youth Alliance' },
+                { id: 'c-ananya', name: 'Ananya Roy', party: 'Independent Youth Voice' }
+            ],
+            counts: { 'c-priya': 52, 'c-rahul': 48, 'c-ananya': 22 }
+        }
     ];
     localStorage.setItem('localElections', JSON.stringify(sample));
     return sample;
@@ -1248,38 +1410,41 @@ window.vote = async function vote(electionId, candidateId) {
 // Vote against backend API (used when election was loaded from backend)
 window.voteBackend = async function voteBackend(electionId, candidateId) {
     try {
-        // try posting to backend endpoint
-        const headers = { 'Content-Type': 'application/json' };
         const backendToken = localStorage.getItem('backendToken');
-        if (!backendToken) {
-            // user must be logged into backend to vote on backend-sourced elections
-            if (confirm('You need to be logged in to vote. Go to login page now?')) {
-                window.location.href = 'index.html';
-            }
-            return;
+        if (!backendToken || backendToken.startsWith('mock-')) {
+            // Smooth offline/test demo fallback without login walls
+            return window.vote(electionId, candidateId);
         }
-        if (backendToken) headers['Authorization'] = 'Bearer ' + backendToken;
+        const headers = { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + backendToken
+        };
         const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/vote`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ candidateId })
         });
+        if (res.status === 401 || res.status === 403) {
+            // Auth expired or invalid token -> record locally
+            return window.vote(electionId, candidateId);
+        }
         const data = await res.json();
         if (res.ok) {
-            try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: data.message || 'Vote submitted.' } })); } catch (e) { }
-            alert(data.message || 'Vote submitted.');
-            refreshCurrentView(electionId); // **FIXED:** Call correct refresh
-            // show results to user (results endpoint is public)
+            const msg = data.message || 'Vote submitted successfully!';
+            try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: msg } })); } catch (e) { }
+            if (typeof showToast === 'function') showToast(msg, 'success');
+            else alert(msg);
+            refreshCurrentView(electionId);
             try { if (window.showResults) setTimeout(() => window.showResults(electionId), 400); } catch (e) { }
         } else {
-            const msg = data.message || 'Vote failed';
+            const msg = data.message || 'Vote could not be processed';
             try { window.dispatchEvent(new CustomEvent('vote:error', { detail: { message: msg } })); } catch (e) { }
-            alert(msg);
+            if (typeof showToast === 'function') showToast(msg, 'error');
+            else alert(msg);
         }
     } catch (err) {
-        console.error('Backend vote error', err);
-        try { window.dispatchEvent(new CustomEvent('vote:error', { detail: { message: 'Network error' } })); } catch (e) { }
-        alert('Network error while voting');
+        console.warn('Backend vote network error, recording locally', err);
+        return window.vote(electionId, candidateId);
     }
 };
 
@@ -1315,40 +1480,9 @@ window.__clearDemoData = function () {
     alert('Demo data cleared.');
 };
 
-// On load, if Firebase isn't available but a local user exists, show voter section
-// On load, if Firebase isn't available but a local user exists, show voter section
+// On load, activate role switcher and load elections directly
 window.addEventListener('load', () => {
-    console.log('[PAGE LOAD] Checking auth state and admin button...');
-
-    // **FIX 2:** This logic is ONLY for index.html.
-    // We add the same guard to stop it from crashing admin.html
-    if (document.getElementById('auth-section')) {
-        // If a local demo user exists and Firebase isn't present, show demo voter section
-        if (!firebaseAvailable) {
-            const lu = JSON.parse(localStorage.getItem('localUser') || 'null');
-            if (lu) {
-                console.log('[PAGE LOAD] Restoring local demo user:', lu.email);
-                showVoterSectionLocal(lu);
-            }
-        }
-        // If a backend-authenticated user is persisted in localStorage, restore their session and show admin button when appropriate
-        try {
-            const raw = localStorage.getItem('backendUser');
-            if (raw) {
-                const bu = JSON.parse(raw);
-                if (bu) {
-                    console.log('[PAGE LOAD] Restoring backend user:', bu.email, 'role:', bu.role);
-                    // populate voter UI using the same local helper so admin button logic is reused
-                    showVoterSectionLocal(bu);
-                    // Explicitly ensure admin button is shown if user is admin
-                    if (bu.role === 'admin' || bu.email === OWNER_EMAIL || bu.email === ADMIN_EMAIL) {
-                        console.log('[PAGE LOAD] User is admin, ensuring button is visible');
-                        setTimeout(() => updateAdminButtonVisibility(true), 100);
-                    }
-                }
-            }
-        } catch (e) { console.warn('[PAGE LOAD] Error restoring backend user:', e); }
-    } // ** END OF NEW GUARD **
+    console.log('[PAGE LOAD] Initializing role-based voting platform...');
 
     // This page-aware logic is fine to run on all pages
     try {
@@ -1361,23 +1495,20 @@ window.addEventListener('load', () => {
             if (eId && window.loadElectionById) {
                 setTimeout(() => window.loadElectionById(eId), 150);
             }
-        } else if (path.includes('admin.html')) {
-            // Admin page logic is in admin.html
         } else {
-            // Assume this is the main page (index.html), load all elections
-            const nav = localStorage.getItem('ovmsNavigate');
-            if (nav === 'showElections') {
-                // remove the flag and call loadElections (do it after a tiny delay so UI is ready)
-                localStorage.removeItem('ovmsNavigate');
+            // Main page (index.html): activate role directly without login walls
+            const savedRole = localStorage.getItem('ovmsActiveRole') || 'voter';
+            if (window.switchTestRole) {
+                window.switchTestRole(savedRole);
             }
             // Always load elections on the main page
             setTimeout(() => {
                 try { if (window.loadElections) window.loadElections(); } catch (e) {
                     console.warn('loadElections failed on main page load', e);
                 }
-            }, 150);
+            }, 100);
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.warn('Init error', e); }
 });
 
 // ---------------- Theme switcher (runtime) ----------------
