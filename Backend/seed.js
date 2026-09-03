@@ -7,8 +7,14 @@ const Vote = require('./models/Vote');
 
 async function seedDatabase(type = 'all', forceReset = false) {
     try {
+        if (typeof type === 'boolean') {
+            forceReset = type;
+            type = 'all';
+        }
+        type = typeof type === 'string' ? type : 'all';
+
         const count = await Election.countDocuments();
-        if (count > 0 && !forceReset && type === 'all') {
+        if (count > 0 && !forceReset) {
             console.log(`[SEED] Database already has ${count} elections. Skipping seed.`);
             return { message: `Database already initialized with ${count} elections.`, count };
         }

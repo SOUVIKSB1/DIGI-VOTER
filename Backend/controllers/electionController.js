@@ -22,15 +22,6 @@ async function findElectionByIdOrSlug(idOrSlug) {
 exports.listAllElections = async (req, res) => {
     try {
         let elections = await Election.find().sort({ createdAt: -1 });
-        if (elections.length === 0) {
-            try {
-                const { seedDatabase } = require('../seed');
-                await seedDatabase();
-                elections = await Election.find().sort({ createdAt: -1 });
-            } catch (seedErr) {
-                console.warn('Auto-seed fallback error:', seedErr.message);
-            }
-        }
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');
             const votes = await Vote.find({ election: e._id });
@@ -59,15 +50,6 @@ exports.getActiveElections = async (req, res) => {
         }
 
         let elections = await Election.find(query).sort({ createdAt: -1 });
-        if (elections.length === 0 && !assembly) {
-            try {
-                const { seedDatabase } = require('../seed');
-                await seedDatabase();
-                elections = await Election.find(query).sort({ createdAt: -1 });
-            } catch (seedErr) {
-                console.warn('Auto-seed fallback in getActiveElections error:', seedErr.message);
-            }
-        }
 
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');

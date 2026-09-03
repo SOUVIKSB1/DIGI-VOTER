@@ -11,10 +11,14 @@ const connectDB = async (mongoUri) => {
     await mongoose.connection.db.admin().command({ ping: 1 });
     console.log('✅ Pinged your MongoDB deployment. Connection successful!');
 
-    // Auto-seed initial elections and 4-5 votes if database is currently empty
+    // Auto-seed initial elections if database is completely empty
     try {
-      const seedDatabase = require('../seed');
-      await seedDatabase(false);
+      const Election = require('../models/Election');
+      const count = await Election.countDocuments();
+      if (count === 0) {
+        const seedDatabase = require('../seed');
+        await seedDatabase('all', false);
+      }
     } catch (seedErr) {
       console.warn('[SEED] Auto-seed note:', seedErr.message);
     }
