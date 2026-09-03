@@ -1469,6 +1469,51 @@ function playEvmBeep() {
     } catch(e) {}
 }
 
+// Toast Notification System Global Attachment
+window.showToast = function(message, type = 'success') {
+    const container = document.getElementById('ovms-toast-container');
+    if (!container) return;
+    const t = document.createElement('div');
+    t.className = `ovms-toast ${type}`;
+    t.innerHTML = `<strong>${type === 'success' ? '✔' : '⚠'}</strong> ${message}`;
+    container.appendChild(t);
+    setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-10px)';
+        setTimeout(() => t.remove(), 300);
+    }, 4000);
+};
+
+// Global Logout Handler (Voter & Admin)
+window.logoutUser = function() {
+    localStorage.removeItem('localUser');
+    localStorage.removeItem('backendUser');
+    localStorage.removeItem('backendToken');
+    localStorage.removeItem('voterAuthSession');
+    localStorage.setItem('ovmsActiveRole', 'voter');
+
+    if (typeof showToast === 'function') {
+        showToast('Signed out of session successfully! 🚪', 'info');
+    }
+
+    if (window.switchTestRole) window.switchTestRole('voter');
+    setTimeout(() => {
+        if (window.openVoterAuthModal) window.openVoterAuthModal('login');
+    }, 300);
+};
+
+window.closeEvmModal = function() {
+    const modal = document.getElementById('evmCastAnimationModal');
+    const slip = document.getElementById('vvpatSlip');
+    const readyLed = document.getElementById('evmReadyLed');
+    const lampLed = document.getElementById('evmLampLed');
+    if (modal) modal.style.display = 'none';
+    if (slip) slip.className = 'vvpat-paper-slip';
+    if (readyLed) readyLed.className = 'evm-lamp-led ready-led';
+    if (lampLed) lampLed.className = 'evm-lamp-led';
+    if (window.loadElections) window.loadElections();
+};
+
 window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendElection) {
     const cName = decodeURIComponent(cNameEnc);
     const party = decodeURIComponent(partyEnc);
@@ -1501,9 +1546,11 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
     const readyLed = document.getElementById('evmReadyLed');
     const lampText = document.getElementById('evmLampText');
     const confirmedSec = document.getElementById('evmConfirmedSection');
+    const confirmedCandNameEl = document.getElementById('confirmedCandName');
 
     if (candNameEl) candNameEl.textContent = cName;
     if (partyEl) partyEl.textContent = party;
+    if (confirmedCandNameEl) confirmedCandNameEl.textContent = `${cName} (${party})`;
     if (timeEl) timeEl.textContent = 'Recorded: ' + new Date().toLocaleTimeString('en-IN');
     if (cryptoSeal) cryptoSeal.textContent = 'AUTH: SHA256-ECI-' + Math.floor(10000000 + Math.random() * 90000000);
     
@@ -1528,7 +1575,7 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
         window.vote(eid, cid);
     }
 
-    // 5. After 1.3s: Long EVM Confirmation Tone + Slip Drops into VVPAT Box + Indelible Ink Stamped
+    // 5. After 1.2s: EVM Confirmation Beep + Slip Drops into VVPAT Box + Indelible Ink Confirmation Shown
     setTimeout(() => {
         if (slip) slip.classList.add('dropped');
         if (lampLed) lampLed.className = 'evm-lamp-led recorded'; // Solid Green
@@ -1536,15 +1583,18 @@ window.confirmAndVote = async function(eid, cid, cNameEnc, partyEnc, isBackendEl
         if (lampText) lampText.textContent = '[ BU-01 ] SLIP PRINTED • AUDIT LOGGED • BOX SEALED';
         if (confirmedSec) confirmedSec.style.display = 'block';
         playEvmBeep();
-    }, 1300);
 
-    // 6. Close modal smoothly after 2.8s
+        if (typeof showToast === 'function') {
+            showToast(`✔ Official Ballot Cast for ${cName} (${party})! Indelible ink stamped.`, 'success');
+        }
+    }, 1200);
+
+    // 6. Smooth fallback auto-close after 6.5s if user hasn't clicked return
     setTimeout(() => {
-        if (modal) modal.style.display = 'none';
-        if (slip) slip.className = 'vvpat-paper-slip';
-        if (readyLed) readyLed.className = 'evm-lamp-led ready-led';
-        if (lampLed) lampLed.className = 'evm-lamp-led';
-    }, 2800);
+        if (modal && modal.style.display === 'flex') {
+            window.closeEvmModal();
+        }
+    }, 6500);
 };
 
 function renderElectionCard(eid, e, showViewButton = false) {

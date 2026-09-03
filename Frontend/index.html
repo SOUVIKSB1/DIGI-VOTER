@@ -42,17 +42,11 @@
 
             <!-- Navbar Right Actions -->
             <div class="nav-actions-group">
-                <!-- Sleek Live Status Pill -->
-                <div class="glass-status-pill" id="systemStatusPill" title="Network & Database Status">
-                    <span class="live-pulse-dot" id="liveDot"></span>
-                    <span id="systemStatusText">System Live</span>
-                </div>
-
-                <!-- Hidden mirrors for compatibility -->
-                <span id="networkStatus" style="display:none;"></span>
-                <span id="backendStatus" style="display:none;"></span>
-                <span id="currentRoleBadge" style="display:none;"></span>
-                
+                <!-- Global Logout Button -->
+                <button class="btn-glass-action" onclick="logoutUser()" title="Sign out of current voter/admin session" style="color:#ef4444; border-color:rgba(239,68,68,0.3);">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </button>
             </div>
         </div>
     </nav>
@@ -95,12 +89,14 @@
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-
                         <button class="btn btn-outline btn-sm" onclick="openVoterAuthModal('login')">
-                            🔑 Voter Login
+                            🔑 Switch Elector
+                        </button>
+                        <button class="btn btn-outline btn-sm" style="color:#ef4444; border-color:#fca5a5;" onclick="logoutUser()">
+                            🚪 Logout
                         </button>
                         <button class="btn btn-primary btn-sm" style="background:var(--deepgreen);" onclick="openVoterAuthModal('register')">
-                            📝 Register New Voter
+                            📝 Form 6 Register
                         </button>
                     </div>
                 </div>
@@ -176,6 +172,9 @@
                     <div style="display:flex; align-items:center; gap:8px;">
                         <button class="btn btn-outline btn-sm" onclick="showAdminCredentialsPrompt()" style="font-size:0.8rem; font-weight:600;">
                             🔑 Switch Admin Account
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="logoutUser()" style="font-size:0.8rem; font-weight:600;">
+                            🚪 Logout Admin
                         </button>
                     </div>
                 </div>
@@ -700,14 +699,17 @@
             </div>
 
             <!-- Confirmation & Indelible Ink Verification -->
-            <div id="evmConfirmedSection" style="display:none; margin-top:8px;">
-                <div class="ink-mark-badge">☝️</div>
-                <h3 style="margin:0; font-size:1.15rem; color:#10b981; font-weight:800; letter-spacing:0.5px;">
-                    BALLOT RECORDED & LOCKED IN VVPAT
+            <div id="evmConfirmedSection" style="display:none; margin-top:14px; padding:14px; background:rgba(16,185,129,0.12); border:1.5px solid #10b981; border-radius:14px;">
+                <div class="ink-mark-badge" style="font-size:2.6rem;">☝️</div>
+                <h3 style="margin:0; font-size:1.18rem; color:#10b981; font-weight:800; letter-spacing:0.5px;">
+                    BALLOT RECORDED & LOCKED IN VVPAT ✔
                 </h3>
-                <p style="margin:4px 0 0 0; font-size:0.82rem; color:#94a3b8; line-height:1.4;">
-                    Your vote has been cryptographically marked with indelible ink, anonymized, and recorded into the official constituency tally.
+                <p style="margin:6px 0 12px 0; font-size:0.86rem; color:#f1f5f9; line-height:1.45;">
+                    Your vote for <strong id="confirmedCandName" style="color:#38bdf8;">Candidate</strong> has been cryptographically recorded, sealed in VVPAT, and stamped with official indelible ink.
                 </p>
+                <button class="btn btn-primary" style="background:#10b981; width:100%; font-weight:800; height:42px; border:none; box-shadow:0 4px 14px rgba(16,185,129,0.4); font-size:0.9rem;" onclick="closeEvmModal()">
+                    ✔ Return to Dashboard
+                </button>
             </div>
         </div>
     </div>
