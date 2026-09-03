@@ -1221,60 +1221,53 @@
             gap: 6px;
         }
 
-        /* Candidate Ballot Row: Stack cleanly for small touchscreens */
-        .candidate-item {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 10px;
-            padding: 12px 14px;
-        }
-
-        .candidate-item > div:first-child {
-            width: 100%;
-        }
-
-        .candidate-item > div:last-child {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            width: 100%;
-            padding-top: 8px;
-            border-top: 1px dashed rgba(0, 0, 0, 0.08);
-        }
-
-        .btn-evm-vote {
-            min-width: 100px;
-            min-height: 44px; /* Accessible mobile tap target */
-            padding: 8px 18px;
-            font-size: 0.88rem;
-        }
-
-        /* Admin Credentials Card Mobile */
+        /* ======================================================
+           MOBILE OPTIMIZED CHIEF ADMIN PANEL
+           ====================================================== */
         .admin-credentials-glass-card {
-            padding: 1.2rem;
-            border-radius: var(--radius-md);
+            padding: 1.15rem;
+            border-radius: 14px;
+            margin-bottom: 1.2rem;
         }
 
         .cred-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 8px;
+            gap: 10px;
         }
 
         .cred-grid {
             grid-template-columns: 1fr;
             gap: 8px;
+            margin: 12px 0;
+        }
+
+        .cred-item {
+            padding: 10px 12px;
+            background: #ffffff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .cred-val-box {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .cred-actions {
             flex-direction: column;
             width: 100%;
-            gap: 8px;
+            gap: 10px;
         }
 
         .cred-actions .btn {
             width: 100%;
+            height: 44px;
             justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
         }
 
         #customAdminLoginForm > div {
@@ -1284,18 +1277,26 @@
 
         #customAdminLoginForm button {
             width: 100% !important;
+            height: 44px;
         }
 
-        /* Admin Navigation Tabs */
+        /* Admin Navigation Tabs - Sleek Mobile Scrollable Bar */
         .admin-dashboard-layout {
             grid-template-columns: 1fr;
-            gap: 1rem;
+            gap: 1.2rem;
         }
 
         .admin-sidebar {
             position: static;
-            padding: 0.8rem;
-            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .admin-sidebar h3 {
+            display: none;
         }
 
         .admin-nav {
@@ -1305,8 +1306,8 @@
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding-bottom: 4px;
-            gap: 6px;
+            padding: 2px 0;
+            gap: 8px;
         }
         .admin-nav::-webkit-scrollbar {
             display: none;
@@ -1314,17 +1315,56 @@
 
         .admin-tab {
             flex-shrink: 0;
-            padding: 8px 12px;
-            font-size: 0.82rem;
+            padding: 9px 14px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            border-radius: 24px;
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            transition: all 0.15s ease;
+        }
+        .admin-tab.active {
+            background: #ea580c !important;
+            color: #ffffff !important;
+            border-color: #ea580c !important;
+            box-shadow: 0 3px 10px rgba(234, 88, 12, 0.3) !important;
         }
 
         .admin-content {
-            padding: 1.1rem;
-            border-radius: var(--radius-md);
+            padding: 1.15rem;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
         }
 
-        .form-grid, .analytics-grid {
+        .form-card {
+            padding: 1.15rem;
+            border-radius: 12px;
+        }
+
+        .form-grid {
             grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .form-grid input, .form-grid select, .form-grid textarea {
+            font-size: 16px !important; /* Prevents iOS browser auto-zoom */
+        }
+
+        .analytics-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .quick-delete-bar {
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            gap: 8px;
+        }
+        .quick-delete-bar input, .quick-delete-bar button {
+            width: 100%;
         }
 
         /* Voter Auth Modal on Mobile */

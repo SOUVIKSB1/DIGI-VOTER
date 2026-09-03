@@ -54,15 +54,9 @@
                 <span id="currentRoleBadge" style="display:none;"></span>
                 
                 <!-- Quick App Tour Button -->
-                <button class="btn-glass-action" onclick="startAppTour(true)" title="Take an interactive tour of the platform">
+                <button class="btn-glass-action" onclick="window.startAppTour ? window.startAppTour(true) : null" title="Take an interactive tour of the platform">
                     <span style="font-size:0.95rem;">🧭</span>
                     <span>App Tour</span>
-                </button>
-
-                <!-- Quick Demo Data Action Button -->
-                <button class="btn-glass-action" onclick="seedDemoElections()" title="Reset and seed verified election data">
-                    <span style="color:#eab308; font-size:0.95rem;">⚡</span>
-                    <span>Seed Demo</span>
                 </button>
             </div>
         </div>
@@ -872,6 +866,17 @@
             if (tabName === 'analytics' && window.loadAnalytics) window.loadAnalytics();
             if (tabName === 'voters' && window.loadVotersPaginated) window.loadVotersPaginated(1);
             if (tabName === 'manageElections' && window.loadElections) window.loadElections();
+        };
+
+        // App Tour Direct Trigger Fallback
+        window.startAppTour = window.startAppTour || function(force = false) {
+            const modal = document.getElementById('appTourModal');
+            if (modal) modal.style.display = 'flex';
+        };
+        window.skipAppTour = window.skipAppTour || function() {
+            localStorage.setItem('digivoter_tour_completed', 'true');
+            const modal = document.getElementById('appTourModal');
+            if (modal) modal.style.display = 'none';
         };
 
         // Toast Notification System
