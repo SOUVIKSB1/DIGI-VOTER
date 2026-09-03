@@ -1093,101 +1093,153 @@ window.loadElections = async function loadElections() {
     }
 };
 
+window.confirmAndVote = function(eid, cid, cNameEnc, partyEnc, isBackendElection) {
+    const cName = decodeURIComponent(cNameEnc);
+    const party = decodeURIComponent(partyEnc);
+    const conf = confirm(`🗳️ CONFIRM YOUR BALLOT\n\nElection ID: ${eid}\nCandidate: ${cName}\nParty: ${party}\n\nDo you want to confirm your vote? In accordance with the voting procedure, your vote is secret and cannot be reversed.`);
+    if (!conf) return;
+
+    if (isBackendElection) {
+        return window.voteBackend(eid, cid);
+    } else {
+        return window.vote(eid, cid);
+    }
+};
+
 function renderElectionCard(eid, e, showViewButton = false) {
-    const title = e.title || 'Untitled Election';
+    const title = e.title || 'Constituency General Election';
+    const description = e.description || 'General Election Ballot';
     const candidates = e.candidates || [];
     const card = document.createElement('div');
     card.className = 'election-card';
-    let html = `<h3>${title}</h3>`;
-    if (showViewButton) {
-        html += `<div style="margin-bottom:8px;"><button class="btn" onclick="viewElection('${eid}')">View Election</button></div>`;
+
+    // Dates formatting
+    let datesText = '';
+    if (e.startDate || e.endDate) {
+        const s = e.startDate ? new Date(e.startDate).toLocaleDateString() : 'Active';
+        const end = e.endDate ? new Date(e.endDate).toLocaleDateString() : 'Ongoing';
+        datesText = `📅 Poll Window: ${s} — ${end}`;
     }
-    // show admin controls only to users who appear to be admin (backend role, owner/admin email, or logged-in owner)
+
+    let html = `
+        <div class="election-card-header">
+            <div>
+                <h3>${title}</h3>
+                <p class="muted" style="font-size:0.85rem; margin-top:3px;">${description}</p>
+            </div>
+            <span class="status-badge online" style="font-size:0.75rem; flex-shrink:0;">Active Ballot</span>
+        </div>
+    `;
+
+    if (datesText) {
+        html += `<div class="election-dates">${datesText}</div>`;
+    }
+
+    if (showViewButton) {
+        html += `<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="window.location.href='voting.html?electionId=${encodeURIComponent(eid)}'">Open Official Ballot Page</button></div>`;
+    }
+
+    // Determine admin status
     try {
         const backendRaw = localStorage.getItem('backendUser');
         let backendUser = null;
-        try { backendUser = backendRaw ? JSON.parse(backendRaw) : null; } catch (e) { backendUser = null; }
+        try { backendUser = backendRaw ? JSON.parse(backendRaw) : null; } catch (err) { backendUser = null; }
         const localRaw = localStorage.getItem('localUser');
         let localUser = null;
-        try { localUser = localRaw ? JSON.parse(localRaw) : null; } catch (e) { localUser = null; }
-        const token = localStorage.getItem('backendToken');
-        const isBackendElection = !!e._isBackend || (window.electionSource && window.electionSource[eid] === 'backend');
-        const isOwnerEmail = (backendUser && (backendUser.email === OWNER_EMAIL || backendUser.email === ADMIN_EMAIL)) || (localUser && (localUser.email === OWNER_EMAIL || localUser.email === ADMIN_EMAIL)) || (window.firebaseAvailable && window.auth && window.auth.currentUser && (window.auth.currentUser.email === OWNER_EMAIL || window.auth.currentUser.email === ADMIN_EMAIL));
+        try { localUser = localRaw ? JSON.parse(localRaw) : null; } catch (err) { localUser = null; }
+        
         const isBackendAdmin = backendUser && backendUser.role === 'admin';
-        const isAdmin = !!(isBackendAdmin || isOwnerEmail);
-        if (isAdmin && isBackendElection) {
-            
-            html += `<div class="election-id-admin"><strong>ID:</strong> ${eid}</div>`;
-            
+        const isOwnerEmail = (backendUser && (backendUser.email === OWNER_EMAIL || backendUser.email === ADMIN_EMAIL)) || 
+                             (localUser && (localUser.email === OWNER_EMAIL || localUser.email === ADMIN_EMAIL));
+        const isAdmin = !!(isBackendAdmin || isOwnerEmail || (localStorage.getItem('ovmsActiveRole') === 'admin'));
+
+        if (isAdmin) {
+            html += `<div class="election-id-admin"><strong>ELECTION ID:</strong> ${eid}</div>`;
             html += `<div class="admin-controls">
-                        <button class="btn btn-outline" onclick="editElection('${eid}')">Edit</button>
-                        <button class="btn btn-outline" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
-                        <button class="btn btn-outline" onclick="showResults('${eid}')">Results</button>
-                        <button class="btn btn-danger" style="padding:6px 12px;font-size:0.8rem;" onclick="deleteElection('${eid}')">Delete</button>
+                        <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">Edit</button>
+                        <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
+                        <button class="btn btn-outline btn-sm" onclick="showResults('${eid}')">Tally Results</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteElection('${eid}')">Delete</button>
                      </div>`;
         }
     } catch (err) { console.warn('Admin control render error', err); }
-    html += `<div class="candidate-list" id="candidates-${eid}">`;
-    if (candidates.length === 0) html += '<p>No candidates.</p>';
-    else {
-        candidates.forEach(c => {
-            const party = c.party || (c.partyName) || 'Independent';
-            const cid = c.id || c._id;
-            // choose voting handler: backend vs firebase/local
-            const isBackendElection = !!e._isBackend || window.electionSource && window.electionSource[eid] === 'backend';
-            const backendRaw = localStorage.getItem('backendUser');
-            let backendUser = null;
-            try { backendUser = backendRaw ? JSON.parse(backendRaw) : null; } catch (er) { backendUser = null; }
-            // determine admin state similar to above
-            const localRaw = localStorage.getItem('localUser');
-            let localUser = null;
-            try { localUser = localRaw ? JSON.parse(localRaw) : null; } catch (er) { localUser = null; }
-            const isOwnerEmail = (backendUser && (backendUser.email === OWNER_EMAIL || backendUser.email === ADMIN_EMAIL)) || (localUser && (localUser.email === OWNER_EMAIL || localUser.email === ADMIN_EMAIL)) || (window.firebaseAvailable && window.auth && window.auth.currentUser && (window.auth.currentUser.email === OWNER_EMAIL || window.auth.currentUser.email === ADMIN_EMAIL));
-            const isBackendAdmin = backendUser && backendUser.role === 'admin';
-            const isAdmin = !!(isBackendAdmin || isOwnerEmail);
 
-            const onclick = isBackendElection ? `voteBackend('${eid}','${cid}')` : `vote('${eid}','${cid}')`;
+    // Check if voter has already voted in this election
+    const localUser = JSON.parse(localStorage.getItem('localUser') || 'null');
+    const localVotes = JSON.parse(localStorage.getItem('localVotes') || '[]');
+    const existingVote = localUser ? localVotes.find(v => v.userEmail === localUser.email && String(v.electionId) === String(eid)) : null;
+
+    html += `<div class="candidate-list" id="candidates-${eid}">`;
+    if (candidates.length === 0) {
+        html += '<p class="muted" style="padding:10px 0;">No nominated candidates found for this ballot.</p>';
+    } else {
+        candidates.forEach((c, idx) => {
+            const party = c.party || c.partyName || 'Independent';
+            const cid = c.id || c._id;
+            const isBackendElection = !!e._isBackend || (window.electionSource && window.electionSource[eid] === 'backend');
+
+            const isAdminRole = (localStorage.getItem('ovmsActiveRole') === 'admin');
+            const hasVotedForThis = existingVote && String(existingVote.candidateId) === String(cid);
+            const hasVotedOther = existingVote && String(existingVote.candidateId) !== String(cid);
+
+            let actionButtonHtml = '';
+            let lampClass = 'evm-lamp';
+
+            if (isAdminRole) {
+                actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled title="Administrators cannot cast ballots">Admin</button>`;
+            } else if (hasVotedForThis) {
+                lampClass = 'evm-lamp voted';
+                actionButtonHtml = `<button class="btn btn-evm-vote btn-voted" disabled>VOTED ✔</button>`;
+            } else if (hasVotedOther) {
+                actionButtonHtml = `<button class="btn btn-outline btn-sm" disabled style="opacity:0.55;">Ballot Cast</button>`;
+            } else {
+                actionButtonHtml = `<button class="btn btn-evm-vote" onclick="confirmAndVote('${eid}','${cid}','${encodeURIComponent(c.name)}','${encodeURIComponent(party)}',${isBackendElection})">Vote</button>`;
+            }
+
             html += `
-                        <div class="candidate-item">
-                            <div class="candidate-info">
-                                <span class="candidate-name">${c.name} <small id="count-${eid}-${cid}" style="margin-left:6px;color:var(--deepgreen);font-weight:700;"></small></span>
-                                <div class="candidate-party">${party}</div>
+                <div class="candidate-item">
+                    <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                        <span class="${lampClass}" id="lamp-${eid}-${cid}" title="EVM Status Indicator"></span>
+                        <div class="candidate-info">
+                            <span class="candidate-name">
+                                ${idx + 1}. ${c.name}
+                                <small id="count-${eid}-${cid}" style="margin-left:6px; color:var(--deepgreen); font-weight:700;"></small>
+                            </span>
+                            <div class="candidate-party">
+                                <span class="party-tag">${party}</span>
                             </div>
-                            ${isAdmin ? '<button class="btn btn-outline" disabled title="Admins cannot vote" style="font-size:0.8rem;padding:6px 12px;">Admin</button>' : `<button class="btn btn-primary" style="font-size:0.8rem;padding:6px 12px;" onclick="${onclick}">Vote</button>`}
                         </div>
-                    `;
+                    </div>
+                    ${actionButtonHtml}
+                </div>
+            `;
         });
     }
     html += `</div>`;
     card.innerHTML = html;
+
     const container = getElectionsDiv();
     if (container) container.appendChild(card);
 
-    // --- THIS IS THE FIX ---
-    // clicking the card (but not its buttons) now navigates to voting.html
+    // Clicking the card outside of buttons navigates to single election focus mode (voting.html)
     card.addEventListener('click', (ev) => {
         const tg = ev.target;
-        // Stop if the user clicks a button inside the card
-        if (tg && (tg.tagName === 'BUTTON' || (tg.closest && tg.closest('button')))) return;
-        
+        if (tg && (tg.tagName === 'BUTTON' || (tg.closest && tg.closest('button')) || tg.tagName === 'INPUT')) return;
         try {
-            // **OLD CODE:** window.showElectionModal(eid, e);
-            // **NEW PATH:** This is the new path you wanted.
             window.location.href = `voting.html?electionId=${encodeURIComponent(eid)}`;
-        } catch (err) { 
-            console.warn('Failed to navigate to election page', err); 
+        } catch (err) {
+            console.warn('Navigation to voting.html failed', err);
         }
     });
-    // --- END OF FIX ---
 
-    // if this is a Firestore-sourced election with counts, populate counts
+    // Populate counts if already stored
     try {
         const counts = e.counts || {};
         if (counts && Object.keys(counts).length > 0) {
             (e.candidates || []).forEach(c => {
                 const cid = c.id || c._id;
                 const el = document.getElementById(`count-${eid}-${cid}`);
-                if (el) el.textContent = `(${counts[cid] || 0})`;
+                if (el && counts[cid] !== undefined) el.textContent = `(${counts[cid]} votes)`;
             });
         }
     } catch (err) { /* ignore */ }

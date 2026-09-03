@@ -469,29 +469,92 @@
    }
    
    .election-card h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
-   
-   .candidate-list { margin-top: 1rem; }
-   .candidate-item {
-       display: flex;
-       justify-content: space-between;
-       align-items: center;
-       padding: 12px;
-       background: #f8fafc;
-       border-radius: var(--radius-md);
-       margin-bottom: 8px;
-       border: 1px solid #e2e8f0;
-   }
-   .candidate-info { display: flex; flex-direction: column; }
-    .candidate-name { font-weight: 600; color: var(--text-primary); }
+    
+    .candidate-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 8px; }
+    .candidate-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border-radius: var(--radius-md);
+        border: 1px solid #e2e8f0;
+        gap: 12px;
+        transition: all 0.2s ease;
+    }
+    .candidate-item:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    .candidate-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .candidate-name { font-weight: 600; color: var(--text-primary); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.95rem; }
     .candidate-party { font-size: 0.8rem; color: var(--text-muted); }
 
-    .election-id-admin {
+    /* Indian EVM Blue Voting Button & Lamp */
+    .btn-evm-vote {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 96px;
+        min-height: 42px;
+        padding: 8px 16px;
+        border-radius: var(--radius-pill);
+        background: #1e40af; /* EVM Blue */
+        color: #ffffff;
+        font-family: var(--font-heading);
+        font-weight: 700;
         font-size: 0.85rem;
-        color: var(--text-muted);
-        margin-bottom: 12px;
-        word-break: break-all;
+        letter-spacing: 0.5px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(30, 64, 175, 0.3);
+        transition: all 0.15s ease;
+        flex-shrink: 0;
     }
-    
+    .btn-evm-vote:hover {
+        background: #1d4ed8;
+        transform: scale(1.02);
+        box-shadow: 0 5px 14px rgba(30, 64, 175, 0.4);
+    }
+    .btn-evm-vote:active {
+        transform: scale(0.96);
+    }
+
+    .evm-lamp {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ef4444; /* Ready Red */
+        box-shadow: 0 0 6px #ef4444;
+        display: inline-block;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+    .evm-lamp.voted {
+        background: #10b981; /* Cast Green */
+        box-shadow: 0 0 8px #10b981;
+    }
+
+    .btn-voted {
+        background: #10b981 !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+        cursor: default !important;
+        transform: none !important;
+    }
+
+    .election-id-admin {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        word-break: break-all;
+        background: #f1f5f9;
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        display: inline-block;
+    }
+     
     .admin-controls {
         display: flex;
         flex-wrap: wrap;
@@ -614,31 +677,168 @@
    /* ======================================================
       RESPONSIVE
       ====================================================== */
-   @media (max-width: 768px) {
-       .admin-dashboard-layout { grid-template-columns: 1fr; }
-       .admin-sidebar { position: static; display: flex; flex-direction: column; }
-       .admin-nav { flex-direction: row; flex-wrap: wrap; }
-       .form-grid, .analytics-grid { grid-template-columns: 1fr; }
-       .span-2 { grid-column: span 1; }
-   }
-   
-   /* ======================================================
-      MODALS & TOASTS (Retained from original but cleaned up)
-      ====================================================== */
-   .modal {
-       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-       background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 2000; padding: 20px;
-   }
-   .modal-card {
-       background: #fff; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 500px;
-       box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-   }
-   
-   #ovms-toast-container { position: fixed; right: 20px; top: 80px; z-index: 5000; display:flex; flex-direction: column; gap: 10px; }
-   .ovms-toast { padding: 12px 20px; border-radius: var(--radius-md); color: #fff; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-   .ovms-toast.success { background: #10b981; }
-   .ovms-toast.error { background: #ef4444; }
-   
-   .loader-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 3000; }
-   .india-loader { width: 40px; height: 40px; border: 4px solid var(--saffron); border-bottom-color: var(--deepgreen); border-radius: 50%; animation: spin 1s linear infinite; }
-   @keyframes spin { 100% { transform: rotate(360deg); } }
+       /* ======================================================
+       COMPREHENSIVE MOBILE RESPONSIVENESS
+       ====================================================== */
+    @media (max-width: 900px) {
+        .nav-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            padding: 0.8rem 1rem;
+        }
+
+        .nav-brand {
+            justify-content: center;
+        }
+
+        .role-switcher-container {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .role-switch-btn {
+            flex: 1;
+            justify-content: center;
+            padding: 8px 12px;
+            font-size: 0.88rem;
+        }
+
+        .nav-links {
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .app-main {
+            margin: 1rem auto;
+            padding: 0 1rem;
+        }
+
+        .hero-banner {
+            padding: 1.4rem 1.2rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .hero-content h2 {
+            font-size: 1.4rem;
+        }
+
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-input-box {
+            max-width: 100%;
+        }
+
+        .elections-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .candidate-item {
+            padding: 10px 12px;
+        }
+
+        .admin-dashboard-layout {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .admin-sidebar {
+            position: static;
+            padding: 1rem;
+        }
+
+        .admin-nav {
+            flex-direction: row;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            gap: 6px;
+        }
+
+        .admin-tab {
+            flex-shrink: 0;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+
+        .admin-content {
+            padding: 1.2rem;
+        }
+
+        .form-grid, .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-delete-bar {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .brand-text {
+            font-size: 1.2rem;
+        }
+
+        .hero-content h2 {
+            font-size: 1.22rem;
+        }
+
+        .btn-evm-vote {
+            min-width: 84px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .stat-card .stat-val {
+            font-size: 2rem;
+        }
+    }
+
+    /* ======================================================
+       MODALS & TOASTS
+       ====================================================== */
+    .modal {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 2000; padding: 20px;
+    }
+    .modal-card {
+        background: #fff; border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 500px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    
+    #ovms-toast-container { 
+        position: fixed; 
+        right: 16px; 
+        top: 16px; 
+        z-index: 9999; 
+        display:flex; 
+        flex-direction: column; 
+        gap: 8px; 
+        max-width: calc(100vw - 32px);
+    }
+    .ovms-toast { 
+        padding: 12px 18px; 
+        border-radius: var(--radius-md); 
+        color: #fff; 
+        font-weight: 600; 
+        font-size: 0.9rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.18); 
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    }
+    .ovms-toast.success { background: #059669; }
+    .ovms-toast.error { background: #dc2626; }
+    
+    .loader-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); z-index: 3000; }
+    .india-loader { width: 44px; height: 44px; border: 4px solid var(--saffron); border-bottom-color: var(--deepgreen); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }

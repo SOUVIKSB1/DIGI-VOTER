@@ -1,5 +1,5 @@
-# Bharat Vote 🇮🇳 (DIGI-VOTER)
-Online Voting Management System (OVMS)
+# DIGI-VOTER 🇮🇳
+Online Voting & Election Management System (OVMS)
 
 A secure, responsive web application for managing online elections, voter authentication, ballot casting, candidate registration, and real-time election analytics.
 

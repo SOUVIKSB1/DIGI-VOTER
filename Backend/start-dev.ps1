@@ -2,7 +2,7 @@
 # Quick Backend Startup Script
 
 Write-Host ""
-Write-Host "Starting Bharat Vote Backend..." -ForegroundColor Cyan
+Write-Host "Starting DIGI-VOTER Backend..." -ForegroundColor Cyan
 Write-Host "==============================" -ForegroundColor Cyan
 Write-Host ""
 
