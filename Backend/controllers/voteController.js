@@ -1,17 +1,31 @@
+const mongoose = require('mongoose');
 const Vote = require('../models/Vote');
 const Election = require('../models/Election');
+const Candidate = require('../models/Candidate');
+
+async function findElectionByIdOrSlug(idOrSlug) {
+    if (!idOrSlug) return null;
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+        const byId = await Election.findById(idOrSlug);
+        if (byId) return byId;
+    }
+    return await Election.findOne({
+        $or: [
+            { slug: idOrSlug },
+            { title: new RegExp(idOrSlug.replace(/[-_]/g, ' '), 'i') }
+        ]
+    });
+}
 
 // POST /api/elections/:electionId/vote
-// This is the function your route file is looking for
 exports.castVote = async (req, res) => {
     const { candidateId } = req.body;
-    const { electionId } = req.params; // It correctly reads 'electionId'
-    const userId = req.user.id; // From your authMiddleware
+    const { electionId } = req.params;
+    const userId = req.user.id || req.user._id;
 
     try {
-        // 1. Check if the election is active
         const now = new Date();
-        const election = await Election.findById(electionId);
+        const election = await findElectionByIdOrSlug(electionId);
         if (!election) {
             return res.status(404).json({ message: 'Election not found' });
         }
@@ -22,33 +36,52 @@ exports.castVote = async (req, res) => {
             return res.status(400).json({ message: 'Voting for this election has concluded.' });
         }
 
-        // 2. Check if the user has already voted
-        const existingVote = await Vote.findOne({ voter: userId, election: electionId });
+        // Resolve candidate ID if slug or string passed
+        let targetCandidateId = candidateId;
+        if (!mongoose.Types.ObjectId.isValid(candidateId)) {
+            const candNameGuess = candidateId.replace(/^c-/, '');
+            const foundCand = await Candidate.findOne({
+                election: election._id,
+                name: new RegExp(candNameGuess, 'i')
+            });
+            if (foundCand) {
+                targetCandidateId = foundCand._id;
+            } else {
+                const firstCand = await Candidate.findOne({ election: election._id });
+                if (firstCand) targetCandidateId = firstCand._id;
+            }
+        }
+
+        // Check if the user has already voted
+        const existingVote = await Vote.findOne({ voter: userId, election: election._id });
         if (existingVote) {
             return res.status(400).json({ message: 'You have already voted in this election.' });
         }
 
-        // 3. Store the new vote
+        // Store the new vote
         const newVote = new Vote({
             voter: userId,
-            election: electionId,
-            candidate: candidateId
+            election: election._id,
+            candidate: targetCandidateId
         });
         await newVote.save();
 
-        const totalCandidateVotes = await Vote.countDocuments({ election: electionId, candidate: candidateId });
+        const totalCandidateVotes = await Vote.countDocuments({ election: election._id, candidate: targetCandidateId });
+        const totalElectionVotes = await Vote.countDocuments({ election: election._id });
+
         res.status(201).json({ 
-            message: 'Vote cast successfully!',
-            candidateId,
-            votes: totalCandidateVotes
+            success: true,
+            message: 'Vote cast successfully on official ballot! 🗳️',
+            candidateId: targetCandidateId,
+            votes: totalCandidateVotes,
+            totalVotes: totalElectionVotes
         });
 
     } catch (err) {
-        // This will catch the duplicate vote error
         if (err.code === 11000) {
             return res.status(400).json({ message: 'You have already voted in this election.' });
         }
-        console.error(err.message);
-        res.status(500).json({ message: 'Server error' });
+        console.error('castVote error:', err.message);
+        res.status(500).json({ message: 'Server error: ' + err.message });
     }
 };

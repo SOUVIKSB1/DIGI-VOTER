@@ -67,6 +67,10 @@ async function seedDatabase(forceReset = false) {
         const el1 = await Election.create({
             title: 'Lok Sabha General Election — Varanasi Parliamentary Constituency',
             description: 'Constituency No. 77, Parliamentary General Election for Member of Parliament.',
+            assembly: 'Varanasi (PC-77)',
+            assemblyNumber: 'PC-77',
+            state: 'Uttar Pradesh',
+            slug: 'ls-2026-varanasi',
             startDate: start,
             endDate: end,
             isActive: true,
@@ -91,6 +95,10 @@ async function seedDatabase(forceReset = false) {
         const el2 = await Election.create({
             title: 'Delhi Legislative Assembly — New Delhi Constituency',
             description: 'State Legislative Assembly election for representative in Vidhan Sabha (AC-40).',
+            assembly: 'New Delhi (AC-40)',
+            assemblyNumber: 'AC-40',
+            state: 'Delhi',
+            slug: 'delhi-assembly-2026',
             startDate: start,
             endDate: end,
             isActive: true,
@@ -115,6 +123,10 @@ async function seedDatabase(forceReset = false) {
         const el3 = await Election.create({
             title: 'National University Student Council Presidential Election',
             description: 'Annual democratic election for the President of the Central University Student Council.',
+            assembly: 'National University',
+            assemblyNumber: 'UNIV-01',
+            state: 'Central',
+            slug: 'student-council-2026',
             startDate: start,
             endDate: end,
             isActive: true,

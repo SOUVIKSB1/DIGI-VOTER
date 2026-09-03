@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const electionSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
+  assembly: { type: String, default: 'Varanasi (PC-77)' }, // Assembly constituency details
+  assemblyNumber: { type: String, default: '' },
+  state: { type: String, default: '' },
+  slug: { type: String, index: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
   isActive: { type: Boolean, default: true },
@@ -10,5 +14,4 @@ const electionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// This is the only thing the file should export
 module.exports = mongoose.model('Election', electionSchema);

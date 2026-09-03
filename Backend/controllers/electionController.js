@@ -1,7 +1,22 @@
-// **FIX:** Import all the models you need at the top
+const mongoose = require('mongoose');
 const Election = require('../models/Election');
 const Candidate = require('../models/Candidate');
 const Vote = require('../models/Vote');
+
+// Helper to resolve election by MongoDB ObjectId or text slug
+async function findElectionByIdOrSlug(idOrSlug) {
+    if (!idOrSlug) return null;
+    if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+        const byId = await Election.findById(idOrSlug);
+        if (byId) return byId;
+    }
+    return await Election.findOne({
+        $or: [
+            { slug: idOrSlug },
+            { title: new RegExp(idOrSlug.replace(/[-_]/g, ' '), 'i') }
+        ]
+    });
+}
 
 // GET /api/elections
 exports.listAllElections = async (req, res) => {
@@ -16,7 +31,6 @@ exports.listAllElections = async (req, res) => {
                 console.warn('Auto-seed fallback error:', seedErr.message);
             }
         }
-        // attach candidates and live vote counts for each election
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');
             const votes = await Vote.find({ election: e._id });
@@ -35,20 +49,26 @@ exports.listAllElections = async (req, res) => {
     }
 };
 
-// GET /api/elections/active
+// GET /api/elections/active?assembly=...
 exports.getActiveElections = async (req, res) => {
     try {
-        // Return all non-disabled elections so created elections are immediately visible
-        let elections = await Election.find({ isActive: { $ne: false } }).sort({ createdAt: -1 });
-        if (elections.length === 0) {
+        const { assembly } = req.query;
+        let query = { isActive: { $ne: false } };
+        if (assembly && assembly.toLowerCase() !== 'all') {
+            query.assembly = new RegExp(assembly.trim(), 'i');
+        }
+
+        let elections = await Election.find(query).sort({ createdAt: -1 });
+        if (elections.length === 0 && !assembly) {
             try {
                 const { seedDatabase } = require('../seed');
                 await seedDatabase();
-                elections = await Election.find({ isActive: { $ne: false } }).sort({ createdAt: -1 });
+                elections = await Election.find(query).sort({ createdAt: -1 });
             } catch (seedErr) {
                 console.warn('Auto-seed fallback in getActiveElections error:', seedErr.message);
             }
         }
+
         const results = await Promise.all(elections.map(async (e) => {
             const candidates = await Candidate.find({ election: e._id }).select('_id name party');
             const votes = await Vote.find({ election: e._id });
@@ -71,12 +91,12 @@ exports.getActiveElections = async (req, res) => {
 exports.getElectionDetails = async (req, res) => {
     try {
         const { electionId } = req.params;
-        const election = await Election.findById(electionId);
+        const election = await findElectionByIdOrSlug(electionId);
         if (!election) {
             return res.status(404).json({ message: 'Election not found' });
         }
-        const candidates = await Candidate.find({ election: electionId }).select('_id name party');
-        const votes = await Vote.find({ election: electionId });
+        const candidates = await Candidate.find({ election: election._id }).select('_id name party');
+        const votes = await Vote.find({ election: election._id });
         const counts = {};
         candidates.forEach(c => { counts[c._id.toString()] = 0; });
         votes.forEach(v => {
@@ -96,15 +116,20 @@ exports.getElectionDetails = async (req, res) => {
 
 // POST /api/elections
 exports.createElection = async (req, res) => {
-    const { title, description, startDate, endDate, isActive } = req.body;
+    const { title, description, assembly, assemblyNumber, state, startDate, endDate, isActive } = req.body;
     try {
+        const slug = (title || 'election').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const newElection = new Election({
             title,
             description,
-            startDate,
-            endDate,
+            assembly: assembly || 'Varanasi (PC-77)',
+            assemblyNumber: assemblyNumber || '',
+            state: state || '',
+            slug,
+            startDate: startDate || new Date(),
+            endDate: endDate || new Date(Date.now() + 30*24*60*60*1000),
             isActive: isActive !== undefined ? isActive : true,
-            createdBy: req.user.id
+            createdBy: req.user.id || req.user._id
         });
         await newElection.save();
         res.status(201).json(newElection);
@@ -115,40 +140,40 @@ exports.createElection = async (req, res) => {
 };
 
 // POST /api/elections/:electionId/candidates
-// **THIS FUNCTION ADDS CANDIDATES**
 exports.addCandidate = async (req, res) => {
     const { name, party } = req.body;
-    const { electionId } = req.params; // **FIXED**
+    const { electionId } = req.params;
     try {
-        const election = await Election.findById(electionId);
+        const election = await findElectionByIdOrSlug(electionId);
         if (!election) {
             return res.status(404).json({ message: "Election not found." });
         }
         const newCandidate = new Candidate({
             name,
             party,
-            election: electionId 
+            election: election._id 
         });
         await newCandidate.save();
-        res.status(201).json(newCandidate); // This sends the success response
+        res.status(201).json(newCandidate);
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ message: 'Server error' }); // This sends the error response
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
 // PUT /api/elections/:electionId
 exports.updateElection = async (req, res) => {
     try {
-        const { electionId } = req.params; // **FIXED**
+        const { electionId } = req.params;
+        const election = await findElectionByIdOrSlug(electionId);
+        if (!election) {
+            return res.status(404).json({ message: 'Election not found' });
+        }
         const updatedElection = await Election.findByIdAndUpdate(
-            electionId,
+            election._id,
             req.body,
             { new: true }
         );
-        if (!updatedElection) {
-            return res.status(404).json({ message: 'Election not found' });
-        }
         res.json(updatedElection);
     } catch (err) {
         console.error(err.message);
@@ -159,13 +184,14 @@ exports.updateElection = async (req, res) => {
 // DELETE /api/elections/:electionId
 exports.deleteElection = async (req, res) => {
     try {
-        const { electionId } = req.params; // **FIXED**
-        const deletedElection = await Election.findByIdAndDelete(electionId);
-        if (!deletedElection) {
+        const { electionId } = req.params;
+        const election = await findElectionByIdOrSlug(electionId);
+        if (!election) {
             return res.status(404).json({ message: 'Election not found' });
         }
-        await Candidate.deleteMany({ election: electionId });
-        await Vote.deleteMany({ election: electionId });
+        await Election.findByIdAndDelete(election._id);
+        await Candidate.deleteMany({ election: election._id });
+        await Vote.deleteMany({ election: election._id });
         res.json({ message: 'Election and all associated data deleted.' });
     } catch (err) {
         console.error(err.message);
@@ -176,15 +202,18 @@ exports.deleteElection = async (req, res) => {
 // GET /api/elections/:electionId/results
 exports.getResults = async (req, res) => {
     try {
-        const { electionId } = req.params; // **FIXED**
-        const votes = await Vote.find({ election: electionId });
+        const { electionId } = req.params;
+        const election = await findElectionByIdOrSlug(electionId);
+        if (!election) {
+            return res.status(404).json({ message: 'Election not found' });
+        }
+        const candidates = await Candidate.find({ election: election._id }).select('name party');
+        const votes = await Vote.find({ election: election._id });
         const results = {};
         for (const vote of votes) {
-            const candidateId = vote.candidate.toString();
-            results[candidateId] = (results[candidateId] || 0) + 1;
+            const cid = vote.candidate ? vote.candidate.toString() : '';
+            results[cid] = (results[cid] || 0) + 1;
         }
-        const candidateIds = Object.keys(results);
-        const candidates = await Candidate.find({ _id: { $in: candidateIds } }).select('name party');
         const formattedResults = candidates.map(c => ({
             candidate: {
                 _id: c._id,

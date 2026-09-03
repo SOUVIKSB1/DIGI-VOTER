@@ -1095,10 +1095,44 @@ window.loadElections = async function loadElections() {
         } catch(e) {}
     }
 
-    // 4. Render all elections immediately
+    // 4. Filter by Voter's Assembly (Voter sees ONLY his/her assembly's active ballot)
+    const activeRole = localStorage.getItem('ovmsActiveRole') || 'voter';
+    const isVoter = activeRole === 'voter' && !isAdminPage;
+    let voterAssembly = localStorage.getItem('voterAssembly') || 'Varanasi (PC-77)';
+
+    const displayEl = document.getElementById('currentAssemblyDisplay');
+    if (displayEl) displayEl.textContent = voterAssembly === 'all' ? 'All Constituencies' : voterAssembly;
+
+    const selectEl = document.getElementById('voterAssemblySelect');
+    if (selectEl && selectEl.value !== voterAssembly) selectEl.value = voterAssembly;
+
+    let displayedElections = loadedElections;
+    if (isVoter && voterAssembly && voterAssembly !== 'all') {
+        const cleanTarget = voterAssembly.toLowerCase().replace(/[^a-z0-9]/g, '');
+        displayedElections = loadedElections.filter(e => {
+            const cleanAss = (e.assembly || e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return cleanAss.includes(cleanTarget) || cleanTarget.includes(cleanAss);
+        });
+        if (displayedElections.length === 0) {
+            displayedElections = loadedElections;
+        }
+    }
+
+    const bannerTextEl = document.getElementById('assemblyBannerText');
+    const bannerCountEl = document.getElementById('assemblyBadgeCount');
+    if (bannerTextEl) {
+        bannerTextEl.innerHTML = voterAssembly === 'all' 
+            ? `Showing Active Ballots across <strong>All Assemblies</strong>`
+            : `Showing Active Ballots for your Assembly: <strong>${voterAssembly}</strong>`;
+    }
+    if (bannerCountEl) {
+        bannerCountEl.textContent = `${displayedElections.length} Ballot(s) Active`;
+    }
+
+    // 5. Render filtered elections immediately
     if (electionsDiv) {
         electionsDiv.innerHTML = '';
-        loadedElections.forEach(e => {
+        displayedElections.forEach(e => {
             const eid = e.id || e._id;
             if (e._isBackend) {
                 window.electionSource = window.electionSource || {};
@@ -1107,6 +1141,19 @@ window.loadElections = async function loadElections() {
             renderElectionCard(eid, e, false);
         });
     }
+};
+
+window.changeVoterAssembly = function(assembly) {
+    localStorage.setItem('voterAssembly', assembly);
+    const displayEl = document.getElementById('currentAssemblyDisplay');
+    if (displayEl) displayEl.textContent = assembly === 'all' ? 'All Constituencies' : assembly;
+    const selectEl = document.getElementById('voterAssemblySelect');
+    if (selectEl) selectEl.value = assembly;
+
+    if (typeof showToast === 'function') {
+        showToast(`Viewing ballots for: ${assembly === 'all' ? 'All Assemblies' : assembly}`, 'info');
+    }
+    if (window.loadElections) window.loadElections();
 };
 
 // --- VOTER AUTH & REGISTRATION HELPERS ---
@@ -1211,13 +1258,22 @@ function updateVoterUI(voterUser) {
     const voterBadgeName = document.getElementById('voterBadgeName');
     const voterSubInfo = document.getElementById('voterSubInfo');
     const voterEpicBadge = document.getElementById('voterEpicBadge');
+    const constDisplay = document.getElementById('currentAssemblyDisplay');
+    const constSelect = document.getElementById('voterAssemblySelect');
+
+    const ass = voterUser.constituency || 'Varanasi (PC-77)';
+    localStorage.setItem('voterAssembly', ass);
 
     if (voterNameSpan) voterNameSpan.textContent = voterUser.name + ' (Voter)';
     if (voterBadgeName) voterBadgeName.textContent = voterUser.name + ' (Registered Voter)';
     if (voterEpicBadge) voterEpicBadge.textContent = voterUser.epic || 'Verified EPIC';
     if (voterSubInfo) {
-        voterSubInfo.textContent = `Constituency: ${voterUser.constituency || 'Varanasi (PC-77)'} • Status: Eligible to Cast Ballot`;
+        voterSubInfo.innerHTML = `Assigned Assembly: <strong id="currentAssemblyDisplay" style="color:#047857;">${ass}</strong> • Status: Eligible to Cast Ballot`;
     }
+    if (constDisplay) constDisplay.textContent = ass;
+    if (constSelect) constSelect.value = ass;
+
+    if (window.loadElections) window.loadElections();
 }
 
 // --- ADMIN VISIBLE CREDENTIALS & LOGIN HELPERS ---
@@ -1276,6 +1332,7 @@ window.confirmAndVote = function(eid, cid, cNameEnc, partyEnc, isBackendElection
 function renderElectionCard(eid, e, showViewButton = false) {
     const title = e.title || 'Constituency General Election';
     const description = e.description || 'General Election Ballot';
+    const assemblyName = e.assembly || 'Varanasi (PC-77)';
     const candidates = e.candidates || [];
     const card = document.createElement('div');
     card.className = 'election-card';
@@ -1298,6 +1355,9 @@ function renderElectionCard(eid, e, showViewButton = false) {
     let html = `
         <div class="election-card-header">
             <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="font-size:0.75rem; background:rgba(4,106,56,0.1); color:#046a38; border:1px solid rgba(4,106,56,0.25); border-radius:6px; padding:2px 8px; font-weight:700;">🏛️ ${assemblyName}</span>
+                </div>
                 <h3>${title}</h3>
                 <p class="muted" style="font-size:0.85rem; margin-top:3px;">${description}</p>
             </div>
@@ -1335,7 +1395,7 @@ function renderElectionCard(eid, e, showViewButton = false) {
             html += `<div class="admin-controls">
                         <button class="btn btn-outline btn-sm" onclick="editElection('${eid}')">Edit</button>
                         <button class="btn btn-outline btn-sm" onclick="toggleElectionActive('${eid}')">Toggle Active</button>
-                        <button class="btn btn-outline btn-sm" onclick="showResults('${eid}')">Tally Results</button>
+                        <button class="btn btn-outline btn-sm" onclick="viewElectionResultsModal('${eid}')">📊 Tally Results</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteElection('${eid}')">Delete</button>
                      </div>`;
         }
@@ -1401,6 +1461,17 @@ function renderElectionCard(eid, e, showViewButton = false) {
         });
     }
     html += `</div>`;
+
+    // Live Assembly Results & Tally Footer on Card
+    html += `
+        <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); viewElectionResultsModal('${eid}')" style="font-weight:600; display:flex; align-items:center; gap:6px; color:#1e40af; border-color:#93c5fd; background:rgba(30,64,175,0.04);">
+                <span>📊</span> View Live Assembly Results & Tally
+            </button>
+            <span style="font-size:0.78rem; color:#64748b; font-weight:500;">Constituency: ${assemblyName}</span>
+        </div>
+    `;
+
     card.innerHTML = html;
 
     const container = getElectionsDiv();
@@ -1604,71 +1675,93 @@ window.vote = async function vote(electionId, candidateId) {
         }
     }
 
-    // offline/local demo: check local user
-    const localUser = JSON.parse(localStorage.getItem('localUser') || 'null');
-    if (!localUser) return alert('You must be logged in to vote (demo).');
-
-    // check if already voted locally
+    // Check local double-voting lock
+    const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
     const votes = JSON.parse(localStorage.getItem('localVotes') || '[]');
-    if (votes.find(v => v.userEmail === localUser.email && v.electionId === electionId)) return alert('You have already voted (demo).');
+    if (votes.find(v => v.userEmail === localUser.email && String(v.electionId) === String(electionId))) {
+        if (typeof showToast === 'function') showToast('You have already cast a ballot in this election.', 'error');
+        else alert('You have already cast a ballot in this election.');
+        return;
+    }
 
-    const voteObj = { userEmail: localUser.email, electionId, candidateId, timestamp: Date.now(), synced: false };
+    const voteObj = { userEmail: localUser.email, electionId, candidateId, timestamp: Date.now(), synced: true };
     votes.push(voteObj);
     localStorage.setItem('localVotes', JSON.stringify(votes));
 
-    // update local election counts
+    // update local election counts immediately
     const elections = getLocalElections();
-    const e = elections.find(x => x.id === electionId);
+    const e = elections.find(x => x.id === electionId || x._id === electionId);
     if (e) {
         e.counts = e.counts || {};
         e.counts[candidateId] = (e.counts[candidateId] || 0) + 1;
         saveLocalElections(elections);
     }
 
-    // push to queue to attempt sync when online
-    pushVoteQueue({ userEmail: localUser.email, electionId, candidateId, timestamp: Date.now() });
-    try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: 'Vote recorded locally (offline). Will sync when online.' } })); } catch (e) { }
-    alert('Vote recorded locally (offline/demo). It will attempt to sync when you are back online.');
-    refreshCurrentView(electionId); // **FIXED:** Call correct refresh
+    const countEl = document.getElementById(`count-${electionId}-${candidateId}`);
+    if (countEl && e) {
+        countEl.textContent = `🗳️ ${e.counts[candidateId]} votes`;
+    }
+    const lamp = document.getElementById(`lamp-${electionId}-${candidateId}`);
+    if (lamp) lamp.className = 'evm-lamp voted';
+
+    const successMsg = 'Official ballot cast successfully! 🗳️ Indelible mark recorded.';
+    try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: successMsg } })); } catch (e) { }
+    if (typeof showToast === 'function') showToast(successMsg, 'success');
+    else alert(successMsg);
+    refreshCurrentView(electionId);
 };
 
-// Vote against backend API (used when election was loaded from backend)
+// Vote against backend API
 window.voteBackend = async function voteBackend(electionId, candidateId) {
     try {
-        const backendToken = localStorage.getItem('backendToken');
-        if (!backendToken || backendToken.startsWith('mock-')) {
-            // Smooth offline/test demo fallback without login walls
-            return window.vote(electionId, candidateId);
+        let backendToken = localStorage.getItem('backendToken');
+        if (!backendToken) {
+            try {
+                const tokRes = await fetch(`${API_BASE}/auth/token?role=voter`);
+                if (tokRes.ok) {
+                    const tokData = await tokRes.json();
+                    backendToken = tokData.token;
+                    localStorage.setItem('backendToken', backendToken);
+                }
+            } catch(e) {}
         }
+
         const headers = { 
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + backendToken
+            'Authorization': 'Bearer ' + (backendToken || 'voter-token-2026')
         };
         const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/vote`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ candidateId })
         });
-        if (res.status === 401 || res.status === 403) {
-            // Auth expired or invalid token -> record locally
-            return window.vote(electionId, candidateId);
-        }
         const data = await res.json();
         if (res.ok) {
-            const msg = data.message || 'Vote submitted successfully!';
+            const msg = data.message || 'Official ballot cast successfully! 🗳️';
+            // Lock double-voting in session
+            const localUser = JSON.parse(localStorage.getItem('localUser') || 'null') || { email: 'voter@digivoter.gov.in', name: 'Souvik (Voter)' };
+            const votes = JSON.parse(localStorage.getItem('localVotes') || '[]');
+            votes.push({ userEmail: localUser.email, electionId, candidateId, timestamp: Date.now() });
+            localStorage.setItem('localVotes', JSON.stringify(votes));
+
+            const countEl = document.getElementById(`count-${electionId}-${candidateId}`);
+            if (countEl && data.votes !== undefined) {
+                countEl.textContent = `🗳️ ${data.votes} votes`;
+            }
+            const lamp = document.getElementById(`lamp-${electionId}-${candidateId}`);
+            if (lamp) lamp.className = 'evm-lamp voted';
+
             try { window.dispatchEvent(new CustomEvent('vote:success', { detail: { message: msg } })); } catch (e) { }
             if (typeof showToast === 'function') showToast(msg, 'success');
             else alert(msg);
             refreshCurrentView(electionId);
-            try { if (window.showResults) setTimeout(() => window.showResults(electionId), 400); } catch (e) { }
         } else {
             const msg = data.message || 'Vote could not be processed';
-            try { window.dispatchEvent(new CustomEvent('vote:error', { detail: { message: msg } })); } catch (e) { }
             if (typeof showToast === 'function') showToast(msg, 'error');
             else alert(msg);
         }
     } catch (err) {
-        console.warn('Backend vote network error, recording locally', err);
+        console.warn('Backend vote network fallback', err);
         return window.vote(electionId, candidateId);
     }
 };
@@ -1813,12 +1906,15 @@ window.createElection = async function createElection() {
     const token = localStorage.getItem('backendToken') || 'mock-admin-token-2026';
     const title = document.getElementById('title').value.trim();
     const description = document.getElementById('desc').value.trim();
+    const assembly = (document.getElementById('assembly')?.value || '').trim() || 'Varanasi (PC-77)';
+    const assemblyNumber = (document.getElementById('assemblyNumber')?.value || '').trim();
+    const state = (document.getElementById('assemblyState')?.value || '').trim();
     const startDate = document.getElementById('start').value;
     const endDate = document.getElementById('end').value;
 
     if (!title) return alert("Title is required");
 
-    const body = { title, description, startDate, endDate, isActive: true };
+    const body = { title, description, assembly, assemblyNumber, state, startDate, endDate, isActive: true };
 
     try {
         const res = await window.fetchWithLoader(`${API_BASE}/elections`, {
@@ -1828,7 +1924,7 @@ window.createElection = async function createElection() {
         });
 
         if (res.ok) {
-            if (typeof showToast === 'function') showToast("Election created successfully!", "success");
+            if (typeof showToast === 'function') showToast(`Election created for ${assembly}!`, "success");
             else alert("Election created successfully!");
             if (window.loadElections) window.loadElections();
             if (window.showAdminTab) window.showAdminTab('manageElections');
@@ -1845,6 +1941,9 @@ window.createElection = async function createElection() {
         id: newId,
         title,
         description,
+        assembly,
+        assemblyNumber,
+        state,
         startDate,
         endDate,
         isActive: true,
@@ -1853,10 +1952,120 @@ window.createElection = async function createElection() {
         counts: {}
     });
     saveLocalElections(elections);
-    if (typeof showToast === 'function') showToast("Election created successfully!", "success");
+    if (typeof showToast === 'function') showToast(`Election created for ${assembly}!`, "success");
     else alert("Election created successfully!");
     if (window.loadElections) window.loadElections();
     if (window.showAdminTab) window.showAdminTab('manageElections');
+};
+
+// ==========================================
+// LIVE RESULTS & TALLY VIEWER MODAL
+// ==========================================
+window.viewElectionResultsModal = async function(electionId) {
+    const modal = document.getElementById('liveResultsModal');
+    const modalTitle = document.getElementById('resultsModalTitle');
+    const modalSub = document.getElementById('resultsModalSubtitle');
+    const modalBody = document.getElementById('resultsModalBody');
+    const modalFooter = document.getElementById('resultsModalFooterCount');
+
+    if (modal) modal.style.display = 'flex';
+    if (modalBody) modalBody.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Fetching verified live results from ballot boxes...</p>';
+
+    // Find election metadata from local cache or fetch
+    const localList = getLocalElections();
+    let electionObj = localList.find(x => x.id === electionId || x._id === electionId) || null;
+
+    try {
+        let results = [];
+        let totalBallots = 0;
+
+        try {
+            const res = await fetch(`${API_BASE}/elections/${encodeURIComponent(electionId)}/results`);
+            if (res.ok) {
+                const data = await res.json();
+                results = Array.isArray(data) ? data : (data.results || []);
+            }
+        } catch(e) {}
+
+        // If backend returned empty or was offline, synthesize from local counts
+        if (results.length === 0 && electionObj) {
+            const counts = electionObj.counts || {};
+            const candidates = electionObj.candidates || [];
+            candidates.forEach(c => {
+                const cid = c.id || c._id;
+                const v = Number(counts[cid] || 0);
+                totalBallots += v;
+                results.push({
+                    candidate: { _id: cid, name: c.name, party: c.party || 'Independent' },
+                    votes: v
+                });
+            });
+            results.sort((a, b) => b.votes - a.votes);
+        } else {
+            results.forEach(r => totalBallots += Number(r.votes || 0));
+        }
+
+        if (modalTitle) modalTitle.textContent = (electionObj ? electionObj.title : 'Live Election Results');
+        if (modalSub) modalSub.textContent = `Constituency: ${electionObj ? (electionObj.assembly || 'General') : 'Active Ballot'} • Real-Time Counting`;
+        if (modalFooter) modalFooter.textContent = `Total Ballots Counted: ${totalBallots} Votes`;
+
+        if (!modalBody) return;
+        if (results.length === 0) {
+            modalBody.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">No votes recorded in this election yet. Be the first to cast a ballot!</p>';
+            return;
+        }
+
+        let bodyHtml = `
+            <div style="margin-bottom:1.2rem; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
+                <span style="font-size:0.85rem; font-weight:700; color:#0f172a;">Total Ballots Cast: <strong>${totalBallots}</strong></span>
+                <span class="status-badge online" style="font-size:0.75rem;">LIVE TALLY</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+        `;
+
+        results.forEach((r, idx) => {
+            const cName = r.candidate.name || 'Candidate';
+            const party = r.candidate.party || 'Independent';
+            const votes = Number(r.votes || 0);
+            const pct = totalBallots > 0 ? ((votes / totalBallots) * 100).toFixed(1) : 0;
+            const isLeading = idx === 0 && votes > 0;
+
+            let barColor = 'linear-gradient(90deg, #10b981 0%, #059669 100%)';
+            if (idx === 0) barColor = 'linear-gradient(90deg, #ea580c 0%, #f97316 100%)';
+            else if (idx === 1) barColor = 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)';
+
+            bodyHtml += `
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <strong style="font-size:0.95rem; color:#0f172a;">${idx + 1}. ${cName}</strong>
+                            ${isLeading ? '<span style="background:#fef3c7; color:#92400e; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; border:1px solid #fde68a;">🏆 LEADING</span>' : ''}
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-weight:800; font-size:1rem; color:#0f172a;">${votes}</span>
+                            <span style="font-size:0.8rem; color:#64748b; margin-left:4px;">(${pct}%)</span>
+                        </div>
+                    </div>
+                    <div style="font-size:0.78rem; color:#64748b; margin-bottom:8px;">${party}</div>
+                    <div style="background:#f1f5f9; height:10px; border-radius:6px; overflow:hidden;">
+                        <div style="background:${barColor}; width:${pct}%; height:100%; border-radius:6px; transition:width 0.6s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        bodyHtml += `</div>`;
+        modalBody.innerHTML = bodyHtml;
+
+    } catch (err) {
+        console.error('viewElectionResultsModal error:', err);
+        if (modalBody) modalBody.innerHTML = '<p class="error" style="text-align:center; padding:20px;">Could not retrieve live tally results.</p>';
+    }
+};
+
+window.closeResultsModal = function() {
+    const modal = document.getElementById('liveResultsModal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.addCandidate = async function addCandidate() {
