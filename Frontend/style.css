@@ -1026,77 +1026,213 @@
     }
    
    /* ======================================================
-      RESPONSIVE
-      ====================================================== */
-       /* ======================================================
-       COMPREHENSIVE MOBILE RESPONSIVENESS
+       COMPREHENSIVE MOBILE RESPONSIVENESS & ERGONOMICS
        ====================================================== */
     @media (max-width: 900px) {
         .nav-container {
             flex-direction: column;
-            align-items: stretch;
+            align-items: center;
             gap: 12px;
-            padding: 0.8rem 1rem;
+            padding: 0.75rem 1rem;
         }
 
         .nav-brand {
-            justify-content: center;
-        }
-
-        .role-switcher-container {
             width: 100%;
             justify-content: center;
         }
 
-        .role-switch-btn {
+        .glass-role-segmented {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .segmented-btn {
             flex: 1;
             justify-content: center;
             padding: 8px 12px;
-            font-size: 0.88rem;
+            font-size: 0.84rem;
         }
 
-        .nav-links {
+        .nav-actions-group {
+            width: 100%;
             justify-content: center;
             flex-wrap: wrap;
             gap: 8px;
+        }
+
+        .glass-status-pill, .btn-glass-action {
+            font-size: 0.76rem;
+            padding: 6px 12px;
         }
     }
 
     @media (max-width: 768px) {
         .app-main {
-            margin: 1rem auto;
-            padding: 0 1rem;
+            margin: 0.8rem auto;
+            padding: 0 0.8rem;
         }
 
+        /* Hero Banner */
         .hero-banner {
             padding: 1.4rem 1.2rem;
             flex-direction: column;
             align-items: flex-start;
             gap: 1rem;
+            border-radius: var(--radius-md);
         }
 
         .hero-content h2 {
-            font-size: 1.4rem;
+            font-size: 1.35rem;
+            line-height: 1.25;
+            letter-spacing: -0.3px;
         }
 
+        .hero-content p.muted {
+            font-size: 0.88rem;
+        }
+
+        .hero-badge-group {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        /* Voter Identity & Auth Card */
+        .glass-auth-card {
+            padding: 1rem 1.1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.2rem;
+        }
+
+        .voter-status-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+
+        .voter-status-header > div:last-child {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .voter-status-header > div:last-child .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 8px 6px;
+            font-size: 0.78rem;
+            text-align: center;
+        }
+
+        /* Search & Filter Bar */
         .filter-bar {
             flex-direction: column;
             align-items: stretch;
+            gap: 8px;
+            margin-bottom: 1.2rem;
         }
 
         .search-input-box {
             max-width: 100%;
+            width: 100%;
         }
 
+        .search-input-box input {
+            font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+        }
+
+        /* Election Card Mobile Ergonomics */
         .elections-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
         }
 
-        .candidate-item {
-            padding: 10px 12px;
+        .election-card {
+            padding: 1.1rem;
+            border-radius: var(--radius-md);
         }
 
+        .election-card-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px;
+        }
+
+        .election-card-header > div:last-child {
+            align-items: flex-start !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            width: 100%;
+            gap: 6px;
+        }
+
+        /* Candidate Ballot Row: Stack cleanly for small touchscreens */
+        .candidate-item {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px;
+            padding: 12px 14px;
+        }
+
+        .candidate-item > div:first-child {
+            width: 100%;
+        }
+
+        .candidate-item > div:last-child {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100%;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-evm-vote {
+            min-width: 100px;
+            min-height: 44px; /* Accessible mobile tap target */
+            padding: 8px 18px;
+            font-size: 0.88rem;
+        }
+
+        /* Admin Credentials Card Mobile */
+        .admin-credentials-glass-card {
+            padding: 1.2rem;
+            border-radius: var(--radius-md);
+        }
+
+        .cred-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .cred-grid {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .cred-actions {
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .cred-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        #customAdminLoginForm > div {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+        }
+
+        #customAdminLoginForm button {
+            width: 100% !important;
+        }
+
+        /* Admin Navigation Tabs */
         .admin-dashboard-layout {
             grid-template-columns: 1fr;
             gap: 1rem;
@@ -1104,55 +1240,88 @@
 
         .admin-sidebar {
             position: static;
-            padding: 1rem;
+            padding: 0.8rem;
+            border-radius: var(--radius-md);
         }
 
         .admin-nav {
+            display: flex;
             flex-direction: row;
             overflow-x: auto;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: 6px;
+            scrollbar-width: none;
+            padding-bottom: 4px;
             gap: 6px;
+        }
+        .admin-nav::-webkit-scrollbar {
+            display: none;
         }
 
         .admin-tab {
             flex-shrink: 0;
             padding: 8px 12px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
         }
 
         .admin-content {
-            padding: 1.2rem;
+            padding: 1.1rem;
+            border-radius: var(--radius-md);
         }
 
         .form-grid, .analytics-grid {
             grid-template-columns: 1fr;
         }
 
-        .quick-delete-bar {
-            width: 100%;
-            max-width: 100%;
+        /* Voter Auth Modal on Mobile */
+        .voter-modal-overlay {
+            padding: 12px;
+            align-items: flex-end; /* Slide-up bottom sheet on phones */
+        }
+
+        .voter-modal-box {
+            max-height: 88vh;
+            overflow-y: auto;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .modal-body {
+            padding: 1.2rem;
+        }
+
+        .modal-form-group input, .modal-form-group select {
+            font-size: 16px !important; /* Disables auto-zoom on mobile browsers */
+            padding: 11px 12px;
         }
     }
 
-    @media (max-width: 480px) {
-        .brand-text {
+    @media (max-width: 420px) {
+        .brand-title {
+            font-size: 1.1rem;
+        }
+
+        .brand-crest {
+            width: 34px;
+            height: 34px;
             font-size: 1.2rem;
         }
 
+        .segmented-btn {
+            font-size: 0.78rem;
+            padding: 7px 8px;
+        }
+
         .hero-content h2 {
-            font-size: 1.22rem;
+            font-size: 1.2rem;
         }
 
-        .btn-evm-vote {
-            min-width: 84px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
+        .voter-status-header > div:last-child {
+            grid-template-columns: 1fr;
         }
 
-        .stat-card .stat-val {
-            font-size: 2rem;
+        .vote-count-pill {
+            font-size: 0.72rem;
+            padding: 3px 8px;
         }
     }
 
