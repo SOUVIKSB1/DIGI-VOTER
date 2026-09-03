@@ -64,6 +64,9 @@
         <!-- ======================================================
              1. VOTER SECTION (Default Landing View)
              ====================================================== -->
+        <!-- ======================================================
+             1. VOTER SECTION (Default Landing View)
+             ====================================================== -->
         <section id="voter-section" class="view-section role-switch-anim">
             <!-- Hero Banner -->
             <div class="hero-banner">
@@ -76,6 +79,30 @@
                         <span class="live-pulse-dot"></span>
                         Official Verified Ballot
                     </span>
+                </div>
+            </div>
+
+            <!-- VOTER IDENTITY & AUTHENTICATION BAR -->
+            <div class="glass-auth-card" id="voterAuthCard">
+                <div class="voter-status-header">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="voter-avatar-badge">🗳️</div>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h4 style="margin:0; font-size:1.05rem; color:#0f172a;" id="voterBadgeName">Souvik (Voter Profile)</h4>
+                                <span class="status-badge online" style="font-size:0.75rem;" id="voterEpicBadge">Verified Voter</span>
+                            </div>
+                            <p class="muted" style="font-size:0.82rem; margin:2px 0 0 0;" id="voterSubInfo">Constituency: Varanasi (PC-77) • Status: Eligible to Cast Ballot</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn btn-outline btn-sm" onclick="openVoterAuthModal('login')">
+                            🔑 Voter Login
+                        </button>
+                        <button class="btn btn-primary btn-sm" style="background:var(--deepgreen);" onclick="openVoterAuthModal('register')">
+                            📝 Register New Voter
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -111,6 +138,73 @@
                         <span class="live-pulse-dot" style="background:#ea580c; box-shadow: 0 0 0 0 rgba(234,88,12,0.7);"></span>
                         Admin Privileges Active
                     </span>
+                </div>
+            </div>
+
+            <!-- VISIBLE CHIEF ELECTION OFFICER CREDENTIALS CARD -->
+            <div class="admin-credentials-glass-card">
+                <div class="cred-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.6rem;">🔐</span>
+                        <div>
+                            <h3 style="margin:0; font-size:1.15rem; color:#0f172a;">Chief Election Officer — Master Access Credentials</h3>
+                            <p class="muted" style="font-size:0.85rem; margin-top:2px;">Use these credentials to authenticate administrative sessions with full election authority.</p>
+                        </div>
+                    </div>
+                    <span class="status-badge online" style="background:rgba(234,88,12,0.12); color:#c2410c; border-color:rgba(234,88,12,0.3);">
+                        🛡️ High Security Access
+                    </span>
+                </div>
+
+                <div class="cred-grid">
+                    <div class="cred-item">
+                        <span class="cred-label">AUTHORIZED ADMIN EMAIL</span>
+                        <div class="cred-val-box">
+                            <code id="adminCredEmail">rajarshighs1@gmail.com</code>
+                            <button class="btn-copy-cred" onclick="navigator.clipboard.writeText('rajarshighs1@gmail.com'); showToast('Admin email copied!','info')" title="Copy Email">📋</button>
+                        </div>
+                    </div>
+                    <div class="cred-item">
+                        <span class="cred-label">MASTER SECURITY PASSWORD</span>
+                        <div class="cred-val-box">
+                            <code id="adminCredPass">admin123</code>
+                            <button class="btn-copy-cred" onclick="navigator.clipboard.writeText('admin123'); showToast('Password copied!','info')" title="Copy Password">📋</button>
+                        </div>
+                    </div>
+                    <div class="cred-item">
+                        <span class="cred-label">CLEARANCE LEVEL</span>
+                        <div class="cred-val-box">
+                            <strong style="color:#c2410c; font-size:0.9rem;">Chief Electoral Officer (Super Admin)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cred-actions">
+                    <button class="btn btn-primary" style="background:linear-gradient(135deg, #ea580c 0%, #c2410c 100%);" onclick="authenticateAsAdmin('rajarshighs1@gmail.com', 'admin123')">
+                        ⚡ 1-Click Authenticate as Admin
+                    </button>
+                    <button class="btn btn-outline" onclick="toggleAdminLoginForm()" id="customAdminLoginBtn">
+                        🔑 Custom Admin Login Form
+                    </button>
+                </div>
+
+                <!-- Custom Admin Login Form (Collapsible) -->
+                <div id="customAdminLoginForm" style="display:none; margin-top:1.2rem; padding-top:1.2rem; border-top:1px solid rgba(0,0,0,0.06);">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:flex-end;">
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:4px; color:#334155;">Admin Email</label>
+                            <input type="email" id="customAdminEmailInput" value="rajarshighs1@gmail.com" class="form-control" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1;" />
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:600; margin-bottom:4px; color:#334155;">Admin Password</label>
+                            <input type="password" id="customAdminPasswordInput" value="admin123" class="form-control" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1;" />
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" onclick="handleCustomAdminLogin()" style="background:#ea580c; height:40px; padding:0 20px;">
+                                Authorize
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -239,6 +333,78 @@
             </div>
         </section>
     </main>
+
+    <!-- Voter Authentication Modal (Login & Registration) -->
+    <div id="voterAuthModal" class="voter-modal-overlay" style="display:none;">
+        <div class="voter-modal-box">
+            <div class="modal-tab-bar">
+                <button id="modalTabLogin" class="modal-tab-btn active" onclick="switchVoterModalTab('login')">
+                    🔑 Voter Login
+                </button>
+                <button id="modalTabRegister" class="modal-tab-btn" onclick="switchVoterModalTab('register')">
+                    📝 New Registration
+                </button>
+                <button style="border:none; background:transparent; padding:0 16px; font-size:1.2rem; cursor:pointer; color:#64748b;" onclick="closeVoterAuthModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 1. LOGIN TAB PANE -->
+                <div id="paneVoterLogin">
+                    <div class="modal-form-group">
+                        <label>Registered Voter Email</label>
+                        <input type="email" id="voterLoginEmail" value="voter@digivoter.gov.in" placeholder="voter@example.com" />
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Security Password</label>
+                        <input type="password" id="voterLoginPassword" value="voter123" placeholder="••••••••" />
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:1.4rem;">
+                        <button class="btn btn-primary full-width" style="background:var(--deepgreen);" onclick="handleVoterLoginSubmit()">
+                            Authorize Ballot Session
+                        </button>
+                    </div>
+                    <div style="margin-top:1rem; text-align:center;">
+                        <button class="btn btn-outline btn-sm" onclick="handleQuickVoterDemo()" style="font-size:0.8rem;">
+                            ⚡ 1-Click Default Demo Voter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. REGISTRATION TAB PANE -->
+                <div id="paneVoterRegister" style="display:none;">
+                    <div class="modal-form-group">
+                        <label>Full Legal Name</label>
+                        <input type="text" id="regVoterName" placeholder="e.g. Ananya Sen" />
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Voter ID / EPIC Number</label>
+                        <input type="text" id="regVoterEpic" placeholder="e.g. VOT-2026-8891" />
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Constituency</label>
+                        <select id="regVoterConstituency">
+                            <option value="Varanasi (PC-77)">Varanasi (PC-77)</option>
+                            <option value="New Delhi (AC-40)">New Delhi (AC-40)</option>
+                            <option value="National University">National University</option>
+                        </select>
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="regVoterEmail" placeholder="ananya@example.com" />
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Create Password</label>
+                        <input type="password" id="regVoterPassword" placeholder="••••••••" />
+                    </div>
+                    <div style="margin-top:1.4rem;">
+                        <button class="btn btn-primary full-width" style="background:var(--deepgreen);" onclick="handleVoterRegisterSubmit()">
+                            Enroll & Activate Voter Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Notification Container -->
     <div id="ovms-toast-container"></div>
