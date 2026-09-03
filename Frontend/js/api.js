@@ -2,9 +2,7 @@
  * VoteVision AI API Client
  * Centralized HTTP request client for /api/v1 endpoints.
  */
-const API_BASE = window.location.origin.includes(":5001") || window.location.origin.includes(":5000")
-  ? `${window.location.origin}/api/v1`
-  : `http://127.0.0.1:5001/api/v1`;
+const API_BASE = `${window.location.origin}/api/v1`;
 
 const API = {
   async get(endpoint, params = {}) {

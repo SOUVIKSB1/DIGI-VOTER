@@ -2,7 +2,8 @@
 VoteVision AI Backend Application Factory
 """
 import os
-from flask import Flask, jsonify
+from pathlib import Path
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from .config import config_by_name
 from .utils.security import add_security_headers
@@ -17,13 +18,46 @@ from .routes.party import party_bp
 from .routes.model import model_bp
 from .routes.ai_analyst import ai_analyst_bp
 
+def find_frontend_dir():
+    """
+    Robustly locate the Frontend static directory across macOS, Linux (Render/Ubuntu),
+    Docker containers, and development environments regardless of casing or working directory.
+    """
+    current_file = Path(__file__).resolve()
+    # Typical locations:
+    # 1. Repo root (parent of Backend/app/ -> parent of Backend -> root)
+    repo_root = current_file.parent.parent.parent
+    cwd = Path(os.getcwd())
+
+    candidate_paths = [
+        repo_root / "Frontend",
+        repo_root / "frontend",
+        current_file.parent.parent / "Frontend",
+        current_file.parent.parent / "frontend",
+        cwd / "Frontend",
+        cwd / "frontend",
+        cwd.parent / "Frontend",
+        cwd.parent / "frontend",
+        Path("/app/Frontend"),
+        Path("/app/frontend")
+    ]
+
+    for p in candidate_paths:
+        if (p / "index.html").exists():
+            return str(p.resolve())
+
+    # Fallback to repo_root / "Frontend"
+    return str((repo_root / "Frontend").resolve())
+
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.getenv("FLASK_ENV", "development")
 
+    frontend_dir = find_frontend_dir()
+
     app = Flask(
         __name__,
-        static_folder="../../frontend",
+        static_folder=frontend_dir,
         static_url_path="/"
     )
     app.config.from_object(config_by_name.get(config_name, config_by_name["development"]))
@@ -50,7 +84,7 @@ def create_app(config_name=None):
     # Legacy fallback routes for backward compatibility with v0 endpoints
     @app.route("/api/predict", methods=["GET", "POST"])
     def legacy_predict():
-        from flask import redirect, url_for, request
+        from flask import redirect, request
         cid = request.args.get("constituency_id", "UP-VARANASI")
         return redirect(f"/api/v1/predictions/{cid}")
 
@@ -64,10 +98,22 @@ def create_app(config_name=None):
         from flask import redirect
         return redirect("/api/v1/analytics")
 
-    # Serve Frontend Single Page App
-    @app.route("/")
-    def serve_index():
-        return app.send_static_file("index.html")
+    # Favicon Route
+    @app.route("/favicon.ico")
+    def favicon():
+        fav = Path(frontend_dir) / "favicon.ico"
+        if fav.is_file():
+            return send_from_directory(frontend_dir, "favicon.ico")
+        return ("", 204)
+
+    # Serve Frontend Single Page App & static assets
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        target = Path(frontend_dir) / path
+        if path != "" and target.is_file():
+            return send_from_directory(frontend_dir, path)
+        return send_from_directory(frontend_dir, "index.html")
 
     # Standard Error Handlers
     @app.errorhandler(404)
